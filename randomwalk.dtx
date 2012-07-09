@@ -124,6 +124,10 @@
 %
 %<*package>
 %    \begin{macrocode}
+%<@@=randomwalk>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
 \ProvidesExplPackage
   {\ExplFileName}{\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
 \RequirePackage{expl3}
@@ -137,7 +141,7 @@
 %    \end{macrocode}
 %
 % \pkg{lcg} needs to know the smallest and biggest random numbers that
-% it should produce, \cs{c_rw_lcg_first} and |_last|. It will then store
+% it should produce, \cs{c_@@_lcg_first} and |_last|. It will then store
 % them in \cs{c@lcg@rand}: the |\c@| is there because of how \LaTeXe{}
 % defines counters. To make it clear that |\c| has a very special
 % meaning here, I do not follow \LaTeX3 naming conventions.
@@ -145,16 +149,15 @@
 % The \pkg{lcg} package would support a range of \( 2^{31} - 1 \), but
 % \pkg{l3fp} constrains us to \(9\) digit numbers, so we take the
 % closest available power of \(2\), namely \( 536870911 = 2^{29} - 1 \).
-%
 %    \begin{macrocode}
-\int_const:Nn \c_rw_lcg_first_int {0}
-\int_const:Nn \c_rw_lcg_last_int  {536870911}
-\int_const:Nn \c_rw_lcg_range_int
-  { \c_rw_lcg_last_int - \c_rw_lcg_first_int }
+\int_const:Nn \c_@@_lcg_first_int {0}
+\int_const:Nn \c_@@_lcg_last_int  {536870911}
+\int_const:Nn \c_@@_lcg_range_int
+  { \c_@@_lcg_last_int - \c_@@_lcg_first_int }
 \RequirePackage
   [
-    first= \c_rw_lcg_first_int,
-    last = \c_rw_lcg_last_int,
+    first= \c_@@_lcg_first_int,
+    last = \c_@@_lcg_last_int,
     counter = lcg@rand
   ]
   { lcg }
@@ -163,7 +166,7 @@
 %
 % We need this constant for fast conversion from degrees to radians later.
 %    \begin{macrocode}
-\fp_const:Nn \c_rw_one_degree_fp {+1.74532925e-2}
+\fp_const:Nn \c_@@_one_degree_fp {+1.74532925e-2}
 %    \end{macrocode}
 %
 %
@@ -171,41 +174,41 @@
 %
 % \begin{macro}{\RandomWalk}
 %   The only user command is \cs{RandomWalk}: it simply does the setup, and
-%   calls the internal macro \cs{rw_walk:}.
+%   calls the internal macro \cs{@@_walk:}.
 %    \begin{macrocode}
 \DeclareDocumentCommand \RandomWalk { m }
   {
-    \rw_set_defaults:
+    \@@_set_defaults:
     \keys_set:nn { randomwalk } { #1 }
-    \rw_walk:
+    \@@_walk:
   }
 %    \end{macrocode}
 % \end{macro}
 %
 %
-% \begin{macro}{\g_rw_Ado_tl}
-% \begin{macro}{\g_rw_Ldo_tl}
-% \begin{macro}{\rw_set_defaults:}
+% \begin{macro}{\g_@@_Ado_tl}
+% \begin{macro}{\g_@@_Ldo_tl}
+% \begin{macro}{\@@_set_defaults:}
 %   Currently, the package treats the length of steps, and the angle,
-%   completely independently. The token list \cs{g_rw_Ldo_tl} contains
+%   completely independently. The token list \cs{g_@@_Ldo_tl} contains
 %   the action that should be done to decide the length of the next step,
-%   while the token list \cs{g_rw_Ado_tl} pertains to the angle.
+%   while the token list \cs{g_@@_Ado_tl} pertains to the angle.
 %
-%   \cs{rw_set_defaults:} sets the default values before processing the user's
+%   \cs{@@_set_defaults:} sets the default values before processing the user's
 %   key-value input.
 %    \begin{macrocode}
-\tl_new:N \g_rw_Ado_tl
-\tl_new:N \g_rw_Ldo_tl
-\bool_new:N \l_rw_A_relative_bool
-\bool_new:N \l_rw_revert_random_bool
-\cs_new:Npn \rw_set_defaults:
+\tl_new:N \g_@@_Ado_tl
+\tl_new:N \g_@@_Ldo_tl
+\bool_new:N \l_@@_A_relative_bool
+\bool_new:N \l_@@_revert_random_bool
+\cs_new:Npn \@@_set_defaults:
   {
-    \fp_set:Nn \l_rw_step_length_fp {10}
-    \int_set:Nn \l_rw_step_number_int {10}
-    \tl_gset:Nn \g_rw_Ado_tl { \rw_Ainterval:nn {-\c_pi_fp} {\c_pi_fp} }
-    \tl_gset:Nn \g_rw_Ldo_tl { \rw_Lfixed:n \l_rw_step_length_fp } %^^A bug?
-    \bool_set_false:N \l_rw_revert_random_bool
-    \bool_set_false:N \l_rw_A_relative_bool
+    \fp_set:Nn \l_@@_step_length_fp {10}
+    \int_set:Nn \l_@@_step_number_int {10}
+    \tl_gset:Nn \g_@@_Ado_tl { \@@_Ainterval:nn {-\c_pi_fp} {\c_pi_fp} }
+    \tl_gset:Nn \g_@@_Ldo_tl { \@@_Lfixed:n \l_@@_step_length_fp } %^^A bug?
+    \bool_set_false:N \l_@@_revert_random_bool
+    \bool_set_false:N \l_@@_A_relative_bool
   }
 %    \end{macrocode}
 % \end{macro}
@@ -220,24 +223,24 @@
     number .value_required:,
     length .value_required:,
     angles .value_required:,
-    number .code:n = {\int_set:Nn \l_rw_step_number_int {#1}},
+    number .code:n = {\int_set:Nn \l_@@_step_number_int {#1}},
     length .code:n =
       {
-        \clist_set:Nn \l_rw_lengths_clist {#1}
-        \rw_clist_fp_from_dim:N \l_rw_lengths_clist
-        \int_compare:nNnTF { \clist_length:N \l_rw_lengths_clist } = {1}
-          { \tl_gset:Nn \g_rw_Ldo_tl { \rw_Lfixed:n \l_rw_lengths_clist } }
-          { \tl_gset:Nn \g_rw_Ldo_tl { \rw_Llist:N \l_rw_lengths_clist } }
+        \clist_set:Nn \l_@@_lengths_clist {#1}
+        \@@_clist_fp_from_dim:N \l_@@_lengths_clist
+        \int_compare:nNnTF { \clist_length:N \l_@@_lengths_clist } = {1}
+          { \tl_gset:Nn \g_@@_Ldo_tl { \@@_Lfixed:n \l_@@_lengths_clist } }
+          { \tl_gset:Nn \g_@@_Ldo_tl { \@@_Llist:N \l_@@_lengths_clist } }
       },
     angles .code:n  =
       {
-        \clist_set:Nn \l_rw_angles_clist {#1}
-        \tl_gset:Nn \g_rw_Ado_tl { \rw_Alist:N \l_rw_angles_clist }
+        \clist_set:Nn \l_@@_angles_clist {#1}
+        \tl_gset:Nn \g_@@_Ado_tl { \@@_Alist:N \l_@@_angles_clist }
       },
-    degree .code:n  = { \rw_radians_from_degrees:N \l_rw_angles_clist },
-    degrees .code:n = { \rw_radians_from_degrees:N \l_rw_angles_clist },
-    angles-relative .code:n   = { \bool_set_true:N \l_rw_A_relative_bool },
-    revert-random .bool_set:N = \l_rw_revert_random_bool,
+    degree .code:n  = { \@@_radians_from_degrees:N \l_@@_angles_clist },
+    degrees .code:n = { \@@_radians_from_degrees:N \l_@@_angles_clist },
+    angles-relative .code:n   = { \bool_set_true:N \l_@@_A_relative_bool },
+    revert-random .bool_set:N = \l_@@_revert_random_bool,
   }
 %    \end{macrocode}
 % \end{macro}
@@ -245,22 +248,22 @@
 %
 % \subsection{Drawing}
 %
-% \begin{macro}{\rw_walk:}
-%   We are ready to define \cs{rw_walk:}, which draws a \pkg{TikZ}
+% \begin{macro}{\@@_walk:}
+%   We are ready to define \cs{@@_walk:}, which draws a \pkg{TikZ}
 %   picture of a random walk with the parameters set up by the
 %   \texttt{keys}.  We reset all the coordinates to zero originally.
 %   Then we draw the relevant \pkg{TikZ} picture by repeatedly calling
-%   \cs{rw_step_draw:}.
+%   \cs{@@_step_draw:}.
 %    \begin{macrocode}
-\cs_new:Npn \rw_walk:
+\cs_new:Npn \@@_walk:
   {
-    \fp_zero:N \l_rw_old_x_fp
-    \fp_zero:N \l_rw_old_y_fp
-    \fp_zero:N \l_rw_new_x_fp
-    \fp_zero:N \l_rw_new_y_fp
+    \fp_zero:N \l_@@_old_x_fp
+    \fp_zero:N \l_@@_old_y_fp
+    \fp_zero:N \l_@@_new_x_fp
+    \fp_zero:N \l_@@_new_y_fp
     \begin{tikzpicture}
-      \prg_replicate:nn { \l_rw_step_number_int } { \rw_step_draw: }
-      \bool_if:NF \l_rw_revert_random_bool
+      \prg_replicate:nn { \l_@@_step_number_int } { \@@_step_draw: }
+      \bool_if:NF \l_@@_revert_random_bool
         { \int_gset_eq:NN \cr@nd \cr@nd }
     \end{tikzpicture}
   }
@@ -268,77 +271,77 @@
 %   \cs{cr@nd} is internal to the lcg package.
 % \end{macro}
 %
-% \begin{macro}{\rw_step_draw:}
-%   \cs{rw_step_draw:} passes its second argument \emph{with one level of
+% \begin{macro}{\@@_step_draw:}
+%   \cs{@@_step_draw:} passes its second argument \emph{with one level of
 %     braces removed} to its first argument, responsible for making a random
-%   step. Then, \cs{rw_step_draw:} draws the random step.
+%   step. Then, \cs{@@_step_draw:} draws the random step.
 %    \begin{macrocode}
-\cs_new:Npn \rw_step_draw:
+\cs_new:Npn \@@_step_draw:
   {
-    \g_rw_Ldo_tl
-    \g_rw_Ado_tl
-    \rw_cartesian_from_polar:NNNN
-      \l_rw_step_x_fp \l_rw_step_y_fp
-      \l_rw_radius_fp \l_rw_angle_fp
-    \fp_add:Nn \l_rw_new_x_fp { \l_rw_step_x_fp }
-    \fp_add:Nn \l_rw_new_y_fp { \l_rw_step_y_fp }
-    \draw ( \fp_to_dim:N \l_rw_old_x_fp, \fp_to_dim:N \l_rw_old_y_fp )
-       -- ( \fp_to_dim:N \l_rw_new_x_fp, \fp_to_dim:N \l_rw_new_y_fp );
-    \fp_set_eq:NN \l_rw_old_x_fp \l_rw_new_x_fp
-    \fp_set_eq:NN \l_rw_old_y_fp \l_rw_new_y_fp
+    \g_@@_Ldo_tl
+    \g_@@_Ado_tl
+    \@@_cartesian_from_polar:NNNN
+      \l_@@_step_x_fp \l_@@_step_y_fp
+      \l_@@_radius_fp \l_@@_angle_fp
+    \fp_add:Nn \l_@@_new_x_fp { \l_@@_step_x_fp }
+    \fp_add:Nn \l_@@_new_y_fp { \l_@@_step_y_fp }
+    \draw ( \fp_to_dim:N \l_@@_old_x_fp, \fp_to_dim:N \l_@@_old_y_fp )
+       -- ( \fp_to_dim:N \l_@@_new_x_fp, \fp_to_dim:N \l_@@_new_y_fp );
+    \fp_set_eq:NN \l_@@_old_x_fp \l_@@_new_x_fp
+    \fp_set_eq:NN \l_@@_old_y_fp \l_@@_new_y_fp
   }
 %    \end{macrocode}
 % \end{macro}
 %
 % The next couple of macros store a random floating point in
-% \cs{l_rw_length_fp} or \cs{l_rw_angle_fp}.
+% \cs{l_@@_length_fp} or \cs{l_@@_angle_fp}.
 %
-% \begin{macro}{\rw_L..:.}
+% \begin{macro}{\@@_L..:.}
 %   First for the length of steps.
 %    \begin{macrocode}
-\cs_new:Npn \rw_Lfixed:n #1
-  { \fp_set:Nn \l_rw_radius_fp {#1} }
-\cs_new:Npn \rw_Llist:N #1
-  { \rw_set_to_random_clist_element:NN \l_rw_radius_fp #1 }
-\cs_new:Npn \rw_Linterval:nn #1#2
-  { \rw_set_to_random_fp:Nnn \l_rw_radius_fp {#1} {#2} }
+\cs_new:Npn \@@_Lfixed:n #1
+  { \fp_set:Nn \l_@@_radius_fp {#1} }
+\cs_new:Npn \@@_Llist:N #1
+  { \@@_set_to_random_clist_element:NN \l_@@_radius_fp #1 }
+\cs_new:Npn \@@_Linterval:nn #1#2
+  { \@@_set_to_random_fp:Nnn \l_@@_radius_fp {#1} {#2} }
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\rw_A..:.}
+% \begin{macro}{\@@_A..:.}
 %   Then for angles.
 %    \begin{macrocode}
-\cs_new:Npn \rw_Ainterval:nn #1#2
+\cs_new:Npn \@@_Ainterval:nn #1#2
   {
-    \bool_if:NTF \l_rw_A_relative_bool
-      { \rw_add_to_random_fp:Nnn }
-      { \rw_set_to_random_fp:Nnn }
-      \l_rw_angle_fp {#1} {#2}
+    \bool_if:NTF \l_@@_A_relative_bool
+      { \@@_add_to_random_fp:Nnn }
+      { \@@_set_to_random_fp:Nnn }
+      \l_@@_angle_fp {#1} {#2}
   }
-\cs_new:Npn \rw_Alist:N #1
+\cs_new:Npn \@@_Alist:N #1
   {
-    \bool_if:NTF \l_rw_A_relative_bool
-      { \rw_add_to_random_clist_element:NN }
-      { \rw_set_to_random_clist_element:NN }
-      \l_rw_angle_fp #1
+    \bool_if:NTF \l_@@_A_relative_bool
+      { \@@_add_to_random_clist_element:NN }
+      { \@@_set_to_random_clist_element:NN }
+      \l_@@_angle_fp #1
   }
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\rw_cartesian_from_polar:NNNN}
-%   The four arguments of \cs{rw_cartesian_from_polar:NNNN} are
+% \begin{macro}{\@@_cartesian_from_polar:NNNN}
+%   The four arguments of \cs{@@_cartesian_from_polar:NNNN} are
 %   \( (x, y, r, \theta) \): it sets \( (x, y) \) equal to the cartesian
 %   coordinates corresponding to a radius \(r\) and an angle \( \theta \).
 %   We also give a version with global assignments.
 %    \begin{macrocode}
-\cs_new_protected:Npn \rw_cartesian_from_polar:NNNN #1#2#3#4
+\cs_new_protected:Npn \@@_cartesian_from_polar:NNNN #1#2#3#4
   {
     \fp_cos:Nn #1 {\fp_use:N #4}
     \fp_sin:Nn #2 {\fp_use:N #4}
     \fp_mul:Nn #1 {\fp_use:N #3}
     \fp_mul:Nn #2 {\fp_use:N #3}
   }
-\cs_new_protected:Npn \rw_gcartesian_from_polar:NNNN #1#2#3#4
+\cs_new_protected:Npn \@@_gcartesian_from_polar:NNNN #1#2#3#4
   {
     \fp_gcos:Nn #1 {\fp_use:N #4}
     \fp_gsin:Nn #2 {\fp_use:N #4}
@@ -359,7 +362,7 @@
 % change quite easily our source of random numbers.
 %
 %    \begin{macrocode}
-\cs_new:Npn \rw_set_to_random_int:Nnn #1#2#3
+\cs_new:Npn \@@_set_to_random_int:Nnn #1#2#3
   {
     \rand
     \int_set:Nn #1 { #2 + \int_mod:nn {\c@lcg@rand} { #3 + 1 - (#2) } }
@@ -367,41 +370,41 @@
 %    \end{macrocode}
 % We also need floating point random numbers.
 %    \begin{macrocode}
-\cs_new:Npn \rw_set_to_random_fp:Nnn #1#2#3
+\cs_new:Npn \@@_set_to_random_fp:Nnn #1#2#3
   {
-    \fp_set:Nn \l_rw_tmpa_fp {#3}
-    \fp_sub:Nn \l_rw_tmpa_fp {#2}
+    \fp_set:Nn \l_@@_tmpa_fp {#3}
+    \fp_sub:Nn \l_@@_tmpa_fp {#2}
     \rand
-    \fp_set:Nn \l_rw_tmpb_fp { \int_use:N \c@lcg@rand }
-    \fp_div:Nn \l_rw_tmpb_fp { \int_use:N \c_rw_lcg_range_int }
-    \fp_mul:Nn \l_rw_tmpa_fp { \l_rw_tmpb_fp }
-    \fp_add:Nn \l_rw_tmpa_fp {#2}
-    \fp_set:Nn #1 { \l_rw_tmpa_fp }
+    \fp_set:Nn \l_@@_tmpb_fp { \int_use:N \c@lcg@rand }
+    \fp_div:Nn \l_@@_tmpb_fp { \int_use:N \c_@@_lcg_range_int }
+    \fp_mul:Nn \l_@@_tmpa_fp { \l_@@_tmpb_fp }
+    \fp_add:Nn \l_@@_tmpa_fp {#2}
+    \fp_set:Nn #1 { \l_@@_tmpa_fp }
   }
-\cs_new:Npn \rw_add_to_random_fp:Nnn #1#2#3
+\cs_new:Npn \@@_add_to_random_fp:Nnn #1#2#3
   {
-    \fp_set:Nn \l_rw_tmpa_fp {#3}
-    \fp_sub:Nn \l_rw_tmpa_fp {#2}
+    \fp_set:Nn \l_@@_tmpa_fp {#3}
+    \fp_sub:Nn \l_@@_tmpa_fp {#2}
     \rand
-    \fp_set:Nn \l_rw_tmpb_fp { \int_use:N \c@lcg@rand }
-    \fp_div:Nn \l_rw_tmpb_fp { \int_use:N \c_rw_lcg_range_int }
-    \fp_mul:Nn \l_rw_tmpa_fp { \l_rw_tmpb_fp }
-    \fp_add:Nn \l_rw_tmpa_fp {#2}
-    \fp_add:Nn #1 { \l_rw_tmpa_fp } %here: mod?
+    \fp_set:Nn \l_@@_tmpb_fp { \int_use:N \c@lcg@rand }
+    \fp_div:Nn \l_@@_tmpb_fp { \int_use:N \c_@@_lcg_range_int }
+    \fp_mul:Nn \l_@@_tmpa_fp { \l_@@_tmpb_fp }
+    \fp_add:Nn \l_@@_tmpa_fp {#2}
+    \fp_add:Nn #1 { \l_@@_tmpa_fp } %here: mod?
   }
 %    \end{macrocode}
 %
 % We can now pick an element at random from a comma-separated list
 %    \begin{macrocode}
-\cs_new:Npn \rw_set_to_random_clist_element:NN #1#2
+\cs_new:Npn \@@_set_to_random_clist_element:NN #1#2
   {
-    \rw_set_to_random_int:Nnn \l_rw_tmpb_int {1} { \clist_length:N #2 }
-    \fp_set:Nn #1 { \clist_item:Nn #2 { \l_rw_tmpb_int } }
+    \@@_set_to_random_int:Nnn \l_@@_tmpb_int {1} { \clist_length:N #2 }
+    \fp_set:Nn #1 { \clist_item:Nn #2 { \l_@@_tmpb_int } }
   }
-\cs_new:Npn \rw_add_to_random_clist_element:NN #1#2
+\cs_new:Npn \@@_add_to_random_clist_element:NN #1#2
   {
-    \rw_set_to_random_int:Nnn \l_rw_tmpb_int {1} { \clist_length:N #2 }
-    \fp_add:Nn #1 { \clist_item:Nn #2 { \l_rw_tmpb_int } }
+    \@@_set_to_random_int:Nnn \l_@@_tmpb_int {1} { \clist_length:N #2 }
+    \fp_add:Nn #1 { \clist_item:Nn #2 { \l_@@_tmpb_int } }
   }
 %    \end{macrocode}
 %
@@ -410,26 +413,26 @@
 % More stuff on clists.
 %
 %    \begin{macrocode}
-\cs_new:Npn \rw_radians_from_degrees:N #1
+\cs_new:Npn \@@_radians_from_degrees:N #1
   {
-    \clist_clear:N \l_rw_tmpa_clist
+    \clist_clear:N \l_@@_tmpa_clist
     \clist_map_inline:Nn #1
       {
-        \fp_set:Nn \l_rw_tmpa_fp {##1}
-        \fp_mul:Nn \l_rw_tmpa_fp { \c_rw_one_degree_fp }
-        \clist_push:NV \l_rw_tmpa_clist \l_rw_tmpa_fp
+        \fp_set:Nn \l_@@_tmpa_fp {##1}
+        \fp_mul:Nn \l_@@_tmpa_fp { \c_@@_one_degree_fp }
+        \clist_push:NV \l_@@_tmpa_clist \l_@@_tmpa_fp
       }
-    \clist_set_eq:NN #1 \l_rw_tmpa_clist
+    \clist_set_eq:NN #1 \l_@@_tmpa_clist
   }
-\cs_new:Npn \rw_clist_fp_from_dim:N #1
+\cs_new:Npn \@@_clist_fp_from_dim:N #1
   {
-    \clist_clear:N \l_rw_tmpa_clist
+    \clist_clear:N \l_@@_tmpa_clist
     \clist_map_inline:Nn #1
       {
-        \fp_set_from_dim:Nn \l_rw_tmpa_fp {##1}
-        \clist_push:NV \l_rw_tmpa_clist \l_rw_tmpa_fp
+        \fp_set_from_dim:Nn \l_@@_tmpa_fp {##1}
+        \clist_push:NV \l_@@_tmpa_clist \l_@@_tmpa_fp
       }
-    \clist_set_eq:NN #1 \l_rw_tmpa_clist
+    \clist_set_eq:NN #1 \l_@@_tmpa_clist
   }
 %    \end{macrocode}
 %
@@ -439,22 +442,22 @@
 % the |_old| point to the |_new| point. The coordinates |_add| are those
 % of the vector from one to the next, so that |_new = _old + _add|.
 %    \begin{macrocode}
-\fp_new:N \l_rw_old_x_fp
-\fp_new:N \l_rw_old_y_fp
-\fp_new:N \l_rw_step_x_fp
-\fp_new:N \l_rw_step_y_fp
-\fp_new:N \l_rw_new_x_fp
-\fp_new:N \l_rw_new_y_fp
-\fp_new:N \l_rw_angle_fp
-\fp_new:N \l_rw_step_length_fp
-\fp_new:N \l_rw_radius_fp
-\int_new:N \l_rw_step_number_int
-\clist_new:N \l_rw_angles_clist
-\clist_new:N \l_rw_lengths_clist
-\fp_new:N \l_rw_tmpa_fp
-\fp_new:N \l_rw_tmpb_fp
-\clist_new:N \l_rw_tmpa_clist
-\int_new:N \l_rw_tmpb_int
+\fp_new:N \l_@@_old_x_fp
+\fp_new:N \l_@@_old_y_fp
+\fp_new:N \l_@@_step_x_fp
+\fp_new:N \l_@@_step_y_fp
+\fp_new:N \l_@@_new_x_fp
+\fp_new:N \l_@@_new_y_fp
+\fp_new:N \l_@@_angle_fp
+\fp_new:N \l_@@_step_length_fp
+\fp_new:N \l_@@_radius_fp
+\int_new:N \l_@@_step_number_int
+\clist_new:N \l_@@_angles_clist
+\clist_new:N \l_@@_lengths_clist
+\fp_new:N \l_@@_tmpa_fp
+\fp_new:N \l_@@_tmpb_fp
+\clist_new:N \l_@@_tmpa_clist
+\int_new:N \l_@@_tmpb_int
 %    \end{macrocode}
 %</package>
 %
