@@ -139,7 +139,6 @@
 %    \begin{macrocode}
 \RequirePackage{tikz}
 %    \end{macrocode}
-
 %
 % \pkg{lcg} needs to know the smallest and biggest random numbers that
 % it should produce, which we take to be $0$ and $\cs{c_@@_lcg_last_int}
@@ -157,11 +156,6 @@
   ]
   { lcg }
 \rand % This \rand avoids some very odd bug.
-%    \end{macrocode}
-%
-% We need this constant for fast conversion from degrees to radians later.
-%    \begin{macrocode}
-\fp_const:Nn \c_@@_one_degree_fp {+1.74532925e-2}
 %    \end{macrocode}
 %
 %
@@ -275,11 +269,8 @@
   {
     \g_@@_Ldo_tl
     \g_@@_Ado_tl
-    \@@_cartesian_from_polar:NNNN
-      \l_@@_step_x_fp \l_@@_step_y_fp
-      \l_@@_radius_fp \l_@@_angle_fp
-    \fp_add:Nn \l_@@_new_x_fp { \l_@@_step_x_fp }
-    \fp_add:Nn \l_@@_new_y_fp { \l_@@_step_y_fp }
+    \fp_add:Nn \l_@@_new_x_fp { \l_@@_radius_fp * cos \l_@@_angle_fp }
+    \fp_add:Nn \l_@@_new_y_fp { \l_@@_radius_fp * sin \l_@@_angle_fp }
     \draw ( \fp_to_dim:N \l_@@_old_x_fp, \fp_to_dim:N \l_@@_old_y_fp )
        -- ( \fp_to_dim:N \l_@@_new_x_fp, \fp_to_dim:N \l_@@_new_y_fp );
     \fp_set_eq:NN \l_@@_old_x_fp \l_@@_new_x_fp
@@ -323,33 +314,6 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}{\@@_cartesian_from_polar:NNNN}
-%   The four arguments of \cs{@@_cartesian_from_polar:NNNN} are
-%   \( (x, y, r, \theta) \): it sets \( (x, y) \) equal to the cartesian
-%   coordinates corresponding to a radius \(r\) and an angle \( \theta \).
-%   We also give a version with global assignments.
-%    \begin{macrocode}
-\cs_new_protected:Npn \@@_cartesian_from_polar:NNNN #1#2#3#4
-  {
-    \fp_cos:Nn #1 {\fp_use:N #4}
-    \fp_sin:Nn #2 {\fp_use:N #4}
-    \fp_mul:Nn #1 {\fp_use:N #3}
-    \fp_mul:Nn #2 {\fp_use:N #3}
-  }
-\cs_new_protected:Npn \@@_gcartesian_from_polar:NNNN #1#2#3#4
-  {
-    \fp_gcos:Nn #1 {\fp_use:N #4}
-    \fp_gsin:Nn #2 {\fp_use:N #4}
-    \fp_gmul:Nn #1 {\fp_use:N #3}
-    \fp_gmul:Nn #2 {\fp_use:N #3}
-  }
-%    \end{macrocode}
-% \end{macro}
-%
-% We cannot yet do the conversion in the other direction: \pkg{l3fp.dtx}
-% does not yet provide inverse trigonometric functions.  But in fact, we
-% do not need this conversion, so let's stop worrying.
-%
 % \subsection{On random numbers etc.}
 %
 % For random numbers, the interface of \pkg{lcg} is not quite enough, so
@@ -365,27 +329,14 @@
 %    \end{macrocode}
 % We also need floating point random numbers.
 %    \begin{macrocode}
-\cs_new:Npn \@@_set_to_random_fp:Nnn #1#2#3
+\cs_new_nopar:Npn \@@_set_to_random_fp:Nnn
+  { \@@_set_to_random_fp_aux:NNnn \fp_set:Nn }
+\cs_new_nopar:Npn \@@_add_to_random_fp:Nnn
+  { \@@_set_to_random_fp_aux:NNnn \fp_add:Nn }
+\cs_new:Npn \@@_set_to_random_fp_aux:NNnn #1#2#3#4
   {
-    \fp_set:Nn \l_@@_tmpa_fp {#3}
-    \fp_sub:Nn \l_@@_tmpa_fp {#2}
     \rand
-    \fp_set:Nn \l_@@_tmpb_fp { \int_use:N \c@lcg@rand }
-    \fp_div:Nn \l_@@_tmpb_fp { \int_use:N \c_@@_lcg_last_int }
-    \fp_mul:Nn \l_@@_tmpa_fp { \l_@@_tmpb_fp }
-    \fp_add:Nn \l_@@_tmpa_fp {#2}
-    \fp_set:Nn #1 { \l_@@_tmpa_fp }
-  }
-\cs_new:Npn \@@_add_to_random_fp:Nnn #1#2#3
-  {
-    \fp_set:Nn \l_@@_tmpa_fp {#3}
-    \fp_sub:Nn \l_@@_tmpa_fp {#2}
-    \rand
-    \fp_set:Nn \l_@@_tmpb_fp { \int_use:N \c@lcg@rand }
-    \fp_div:Nn \l_@@_tmpb_fp { \int_use:N \c_@@_lcg_last_int }
-    \fp_mul:Nn \l_@@_tmpa_fp { \l_@@_tmpb_fp }
-    \fp_add:Nn \l_@@_tmpa_fp {#2}
-    \fp_add:Nn #1 { \l_@@_tmpa_fp } %here: mod?
+    #1 #2 { #3 + (#4 - (#3)) * \c@lcg@rand / \c_@@_lcg_last_int }
   }
 %    \end{macrocode}
 %
@@ -412,21 +363,14 @@
   {
     \clist_clear:N \l_@@_tmpa_clist
     \clist_map_inline:Nn #1
-      {
-        \fp_set:Nn \l_@@_tmpa_fp {##1}
-        \fp_mul:Nn \l_@@_tmpa_fp { \c_@@_one_degree_fp }
-        \clist_push:NV \l_@@_tmpa_clist \l_@@_tmpa_fp
-      }
+      { \clist_push:Nx \l_@@_tmpa_clist { \fp_eval:n { ##1 deg } } }
     \clist_set_eq:NN #1 \l_@@_tmpa_clist
   }
 \cs_new:Npn \@@_clist_fp_from_dim:N #1
   {
     \clist_clear:N \l_@@_tmpa_clist
     \clist_map_inline:Nn #1
-      {
-        \fp_set_from_dim:Nn \l_@@_tmpa_fp {##1}
-        \clist_push:NV \l_@@_tmpa_clist \l_@@_tmpa_fp
-      }
+      { \clist_push:Nx \l_@@_tmpa_clist { \dim_to_fp:n {##1} } }
     \clist_set_eq:NN #1 \l_@@_tmpa_clist
   }
 %    \end{macrocode}
@@ -434,13 +378,10 @@
 % \subsection{Variables}
 %
 % We need a bunch of floating point numbers: each step line goes from
-% the |_old| point to the |_new| point. The coordinates |_add| are those
-% of the vector from one to the next, so that |_new = _old + _add|.
+% the |_old| point to the |_new| point.
 %    \begin{macrocode}
 \fp_new:N \l_@@_old_x_fp
 \fp_new:N \l_@@_old_y_fp
-\fp_new:N \l_@@_step_x_fp
-\fp_new:N \l_@@_step_y_fp
 \fp_new:N \l_@@_new_x_fp
 \fp_new:N \l_@@_new_y_fp
 \fp_new:N \l_@@_angle_fp
