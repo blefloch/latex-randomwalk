@@ -158,12 +158,74 @@
 \rand % This \rand avoids some very odd bug.
 %    \end{macrocode}
 %
+% \subsection{Variables}
+%
+% \begin{variable}{\l_@@_step_number_int}
+%   The number of steps requested by the caller.
+%    \begin{macrocode}
+\int_new:N \l_@@_step_number_int
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\l_@@_relative_angles_bool}
+%   Booleans for whether angles are relative (keyval option).
+%    \begin{macrocode}
+\bool_new:N \l_@@_relative_angles_bool
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\l_@@_revert_random_bool}
+%   Booleans for whether to revert the random seed to its original value
+%   or keep the last value reached at the end of a random path.
+%    \begin{macrocode}
+\bool_new:N \l_@@_revert_random_bool
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}{\@@_rand_angle:, \@@_rand_length:}
+%   Set the \cs{l_@@_angle_fp} and \cs{l_@@_length_fp} of the next step,
+%   most often randomly.
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_rand_angle: { }
+\cs_new_protected_nopar:Npn \@@_rand_length: { }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{variable}{\l_@@_angle_fp, \l_@@_length_fp}
+%   Angle and length of the next step.
+%    \begin{macrocode}
+\fp_new:N \l_@@_angle_fp
+\fp_new:N \l_@@_length_fp
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\l_@@_old_x_fp, \l_@@_old_y_fp}
+% \begin{variable}{\l_@@_new_x_fp, \l_@@_new_y_fp}
+%   Coordinates of the two ends of each step: each \cs{draw} statement
+%   goes from the |_old| point to the |_new| point.  See
+%   \cs{@@_step_draw:}.
+%    \begin{macrocode}
+\fp_new:N \l_@@_old_x_fp
+\fp_new:N \l_@@_old_y_fp
+\fp_new:N \l_@@_new_x_fp
+\fp_new:N \l_@@_new_y_fp
+%    \end{macrocode}
+% \end{variable}
+% \end{variable}
+%
+% \begin{variable}{\l_@@_angles_seq, \l_@@_lengths_seq}
+%   Sequences containing all allowed angles and lengths.
+%    \begin{macrocode}
+\seq_new:N \l_@@_angles_seq
+\seq_new:N \l_@@_lengths_seq
+%    \end{macrocode}
+% \end{variable}
 %
 % \subsection{How the key-value list is treated}
 %
 % \begin{macro}{\RandomWalk}
-%   The only user command is \cs{RandomWalk}: it simply does the setup, and
-%   calls the internal macro \cs{@@_walk:}.
+%   The only user command is \cs{RandomWalk}: it simply does the setup,
+%   and calls the internal macro \cs{@@_walk:}.
 %    \begin{macrocode}
 \DeclareDocumentCommand \RandomWalk { m }
   {
@@ -174,36 +236,26 @@
 %    \end{macrocode}
 % \end{macro}
 %
-%
-% \begin{macro}{\@@_do_angles:}
-% \begin{macro}{\@@_do_lengths:}
 % \begin{macro}{\@@_set_defaults:}
 %   Currently, the package treats the length of steps, and the angle,
-%   completely independently. The function \cs{@@_do_lengths:} contains
-%   the action that should be done to decide the length of the next step,
-%   while the function \cs{@@_do_angles:} pertains to the angle.
+%   completely independently.  The function \cs{@@_rand_length:}
+%   contains the action that decides the length of the next step, while
+%   the function \cs{@@_rand_angle:} pertains to the angle.
 %
-%   \cs{@@_set_defaults:} sets the default values before processing the user's
-%   key-value input.
+%   \cs{@@_set_defaults:} sets the default values before processing the
+%   user's key-value input.
 %    \begin{macrocode}
-\cs_new_protected_nopar:Npn \@@_do_angles: { }
-\cs_new_protected_nopar:Npn \@@_do_lengths: { }
-\bool_new:N \l_@@_relative_angles_bool
-\bool_new:N \l_@@_revert_random_bool
 \cs_new:Npn \@@_set_defaults:
   {
-    \fp_set:Nn \l_@@_step_length_fp {10}
     \int_set:Nn \l_@@_step_number_int {10}
-    \cs_gset_protected_nopar:Npn \@@_do_angles:
-      { \@@_Ainterval:nn { - pi } { pi } }
-    \cs_gset_protected_nopar:Npn \@@_do_lengths:
-      { \fp_set_eq:NN \l_@@_radius_fp \l_@@_step_length_fp }
+    \cs_gset_protected_nopar:Npn \@@_rand_angle:
+      { \@@_fp_set_rand:Nnn \l_@@_angle_fp { - pi } { pi } }
+    \cs_gset_protected_nopar:Npn \@@_rand_length:
+      { \fp_set:Nn \l_@@_length_fp {10} }
     \bool_set_false:N \l_@@_revert_random_bool
     \bool_set_false:N \l_@@_relative_angles_bool
   }
 %    \end{macrocode}
-% \end{macro}
-% \end{macro}
 % \end{macro}
 %
 % \begin{macro}{\keys_define:nn}
@@ -222,19 +274,27 @@
           \l_@@_lengths_seq { \dim_to_fp:n {##1} }
         \int_compare:nNnTF { \seq_length:N \l_@@_lengths_seq } = {1}
           {
-            \cs_gset_protected_nopar:Npn \@@_do_lengths:
-              { \fp_set:Nn \l_@@_radius_fp {#1} }
+            \cs_gset_protected_nopar:Npn \@@_rand_length:
+              { \fp_set:Nn \l_@@_length_fp {#1} }
           }
           {
-            \cs_gset_protected_nopar:Npn \@@_do_lengths:
-              { \@@_Llist:N \l_@@_lengths_seq }
+            \cs_gset_protected_nopar:Npn \@@_rand_length:
+              {
+                \@@_fp_set_rand_seq_item:NN
+                  \l_@@_length_fp \l_@@_lengths_seq
+              }
           }
       } ,
     angles .code:n  =
       {
         \seq_set_split:Nnn \l_@@_angles_seq { , } {#1}
-        \cs_gset_protected_nopar:Npn \@@_do_angles:
-          { \@@_Alist:N \l_@@_angles_seq }
+        \cs_gset_protected_nopar:Npn \@@_rand_angle:
+          {
+            \bool_if:NTF \l_@@_relative_angles_bool
+              { \@@_fp_add_rand_seq_item:NN }
+              { \@@_fp_set_rand_seq_item:NN }
+              \l_@@_angle_fp \l_@@_angles_seq
+          }
       } ,
     degree .code:n  =
       { \@@_radians_from_degrees:N \l_@@_angles_seq } ,
@@ -247,10 +307,13 @@
 %    \end{macrocode}
 % \end{macro}
 %
+% \begin{macro}{\@@_radians_from_degrees:N}
+%   Helper macro to convert all items in |#1| to degrees.
 %    \begin{macrocode}
 \cs_new:Npn \@@_radians_from_degrees:N #1
   { \seq_set_map:NNn #1 #1 { \fp_eval:n { ##1 deg } } }
 %    \end{macrocode}
+% \end{macro}
 %
 % \subsection{Drawing}
 %
@@ -263,11 +326,11 @@
 %    \begin{macrocode}
 \cs_new:Npn \@@_walk:
   {
-    \fp_zero:N \l_@@_old_x_fp
-    \fp_zero:N \l_@@_old_y_fp
-    \fp_zero:N \l_@@_new_x_fp
-    \fp_zero:N \l_@@_new_y_fp
     \begin{tikzpicture}
+      \fp_zero:N \l_@@_old_x_fp
+      \fp_zero:N \l_@@_old_y_fp
+      \fp_zero:N \l_@@_new_x_fp
+      \fp_zero:N \l_@@_new_y_fp
       \prg_replicate:nn { \l_@@_step_number_int } { \@@_step_draw: }
       \bool_if:NF \l_@@_revert_random_bool
         { \int_gset_eq:NN \cr@nd \cr@nd }
@@ -278,63 +341,35 @@
 % \end{macro}
 %
 % \begin{macro}{\@@_step_draw:}
-%   \cs{@@_step_draw:} passes its second argument \emph{with one level of
-%     braces removed} to its first argument, responsible for making a random
-%   step. Then, \cs{@@_step_draw:} draws the random step.
+%   \cs{@@_step_draw:} calls \cs{@@_rand_length:} and
+%   \cs{@@_rand_angle:} to determine the length and angle of the new
+%   step.  This is then converted to cartesian coordinates and added to
+%   the previous end-point.  Finally, we call \pkg{TikZ}'s \cs{draw} to
+%   produce a line from the |_old| to the |_new| point.
 %    \begin{macrocode}
 \cs_new:Npn \@@_step_draw:
   {
-    \@@_do_lengths:
-    \@@_do_angles:
-    \fp_add:Nn \l_@@_new_x_fp { \l_@@_radius_fp * cos \l_@@_angle_fp }
-    \fp_add:Nn \l_@@_new_y_fp { \l_@@_radius_fp * sin \l_@@_angle_fp }
-    \draw ( \fp_to_dim:N \l_@@_old_x_fp, \fp_to_dim:N \l_@@_old_y_fp )
-       -- ( \fp_to_dim:N \l_@@_new_x_fp, \fp_to_dim:N \l_@@_new_y_fp );
+    \@@_rand_length:
+    \@@_rand_angle:
     \fp_set_eq:NN \l_@@_old_x_fp \l_@@_new_x_fp
     \fp_set_eq:NN \l_@@_old_y_fp \l_@@_new_y_fp
+    \fp_add:Nn \l_@@_new_x_fp { \l_@@_length_fp * cos \l_@@_angle_fp }
+    \fp_add:Nn \l_@@_new_y_fp { \l_@@_length_fp * sin \l_@@_angle_fp }
+    \draw ( \fp_to_dim:N \l_@@_old_x_fp, \fp_to_dim:N \l_@@_old_y_fp )
+       -- ( \fp_to_dim:N \l_@@_new_x_fp, \fp_to_dim:N \l_@@_new_y_fp );
   }
 %    \end{macrocode}
 % \end{macro}
 %
-% The next couple of macros store a random floating point in
-% \cs{l_@@_length_fp} or \cs{l_@@_angle_fp}.
-%
-% \begin{macro}{\@@_L..:.}
-%   First for the length of steps.
-%    \begin{macrocode}
-\cs_new:Npn \@@_Llist:N #1
-  { \@@_fp_set_rand_seq_item:NN \l_@@_radius_fp #1 }
-\cs_new:Npn \@@_Linterval:nn #1#2
-  { \@@_fp_set_rand:Nnn \l_@@_radius_fp {#1} {#2} }
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{macro}{\@@_A..:.}
-%   Then for angles.
-%    \begin{macrocode}
-\cs_new:Npn \@@_Ainterval:nn #1#2
-  {
-    \bool_if:NTF \l_@@_relative_angles_bool
-      { \@@_fp_add_rand:Nnn }
-      { \@@_fp_set_rand:Nnn }
-      \l_@@_angle_fp {#1} {#2}
-  }
-\cs_new:Npn \@@_Alist:N #1
-  {
-    \bool_if:NTF \l_@@_relative_angles_bool
-      { \@@_fp_add_rand_seq_item:NN }
-      { \@@_fp_set_rand_seq_item:NN }
-      \l_@@_angle_fp #1
-  }
-%    \end{macrocode}
-% \end{macro}
-%
-% \subsection{On random numbers etc.}
+% \subsection{On random numbers and items}
 %
 % For random numbers, the interface of \pkg{lcg} is not quite enough, so
 % we provide our own \LaTeX3-y functions.  Also, this will allow us to
 % change quite easily our source of random numbers.
 %
+% \begin{macro}[aux]{\@@_int_set_rand:Nnn}
+%   Sets the integer register |#1| equal to a random integer between
+%   |#2| and |#3| inclusive.
 %    \begin{macrocode}
 \cs_new:Npn \@@_int_set_rand:Nnn #1#2#3
   {
@@ -342,7 +377,12 @@
     \int_set:Nn #1 { #2 + \int_mod:nn {\c@lcg@rand} { #3 + 1 - (#2) } }
   }
 %    \end{macrocode}
-% We also need floating point random numbers.
+% \end{macro}
+%
+% \begin{macro}[aux]{\@@_fp_set_rand:Nnn, \@@_fp_add_rand:Nnn}
+% \begin{macro}[aux]{\@@_fp_set_rand_aux:NNnn}
+%   We also need floating point random numbers, both assigned and added
+%   to the variable |#1| (well, |#2| of the auxiliary).
 %    \begin{macrocode}
 \cs_new_nopar:Npn \@@_fp_set_rand:Nnn
   { \@@_fp_set_rand_aux:NNnn \fp_set:Nn }
@@ -354,40 +394,31 @@
     #1 #2 { #3 + (#4 - (#3)) * \c@lcg@rand / \c_@@_lcg_last_int }
   }
 %    \end{macrocode}
+% \end{macro}
+% \end{macro}
 %
-% We can now pick an element at random from a sequence.
+% \begin{macro}[aux]{\@@_fp_set_rand_seq_item:NN, \@@_fp_add_rand_seq_item:NN}
+% \begin{macro}[aux]{\@@_fp_set_rand_item_aux:NNNNN}
+%   We can now pick an element at random from a sequence, and either
+%   assign it or add it to the fp variable |#4|.  The same auxiliary
+%   could be used for picking random items from other types of lists.
 %    \begin{macrocode}
-\cs_new:Npn \@@_fp_set_rand_seq_item:NN #1#2
+\cs_new_protected_nopar:Npn \@@_fp_set_rand_seq_item:NN
+  { \@@_fp_set_rand_item_aux:NNNNN \fp_set:Nn \seq_item:Nn \seq_length:N }
+\cs_new_protected_nopar:Npn \@@_fp_add_rand_seq_item:NN
+  { \@@_fp_set_rand_item_aux:NNNNN \fp_add:Nn \seq_item:Nn \seq_length:N }
+\cs_new_protected:Npn \@@_fp_set_rand_item_aux:NNNNN #1#2#3#4#5
   {
-    \@@_int_set_rand:Nnn \l_@@_tmpb_int {1} { \seq_length:N #2 }
-    \fp_set:Nn #1 { \seq_item:Nn #2 { \l_@@_tmpb_int } }
-  }
-\cs_new:Npn \@@_fp_add_rand_seq_item:NN #1#2
-  {
-    \@@_int_set_rand:Nnn \l_@@_tmpb_int {1} { \seq_length:N #2 }
-    \fp_add:Nn #1 { \seq_item:Nn #2 { \l_@@_tmpb_int } }
+    \rand
+    #1 #4 { #2 #5 { 1 + \int_mod:nn { \c@lcg@rand } { #3 #5 } } }
   }
 %    \end{macrocode}
+% \end{macro}
+% \end{macro}
 %
-%
-% \subsection{Variables}
-%
-% We need a bunch of floating point numbers: each step line goes from
-% the |_old| point to the |_new| point.
 %    \begin{macrocode}
-\fp_new:N \l_@@_old_x_fp
-\fp_new:N \l_@@_old_y_fp
-\fp_new:N \l_@@_new_x_fp
-\fp_new:N \l_@@_new_y_fp
-\fp_new:N \l_@@_angle_fp
-\fp_new:N \l_@@_step_length_fp
-\fp_new:N \l_@@_radius_fp
-\int_new:N \l_@@_step_number_int
-\seq_new:N \l_@@_angles_seq
-\seq_new:N \l_@@_lengths_seq
-\int_new:N \l_@@_tmpb_int
-%    \end{macrocode}
 %</package>
+%    \end{macrocode}
 %
 % \end{implementation}
 %
