@@ -28,196 +28,135 @@
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{tikz}
-\int_const:Nn \c_rw_lcg_first_int {0}
-\int_const:Nn \c_rw_lcg_last_int  {536870911}
-\int_const:Nn \c_rw_lcg_range_int
-  { \c_rw_lcg_last_int - \c_rw_lcg_first_int }
+\int_const:Nn \c__randomwalk_lcg_last_int { \c_max_int - \c_one }
 \RequirePackage
   [
-    first= \c_rw_lcg_first_int,
-    last = \c_rw_lcg_last_int,
+    first= \c_zero ,
+    last = \c__randomwalk_lcg_last_int ,
     counter = lcg@rand
   ]
   { lcg }
 \rand % This \rand avoids some very odd bug.
-\fp_const:Nn \c_rw_one_degree_fp {+1.74532925e-2}
+\int_new:N \l__randomwalk_step_number_int
+\bool_new:N \l__randomwalk_relative_angles_bool
+\bool_new:N \l__randomwalk_revert_random_bool
+\cs_new_protected_nopar:Npn \__randomwalk_rand_angle: { }
+\cs_new_protected_nopar:Npn \__randomwalk_rand_length: { }
+\fp_new:N \l__randomwalk_angle_fp
+\fp_new:N \l__randomwalk_length_fp
+\fp_new:N \l__randomwalk_old_x_fp
+\fp_new:N \l__randomwalk_old_y_fp
+\fp_new:N \l__randomwalk_new_x_fp
+\fp_new:N \l__randomwalk_new_y_fp
+\seq_new:N \l__randomwalk_angles_seq
+\seq_new:N \l__randomwalk_lengths_seq
 \DeclareDocumentCommand \RandomWalk { m }
   {
-    \rw_set_defaults:
+    \__randomwalk_set_defaults:
     \keys_set:nn { randomwalk } { #1 }
-    \rw_walk:
+    \__randomwalk_walk:
   }
-\tl_new:N \g_rw_Ado_tl
-\tl_new:N \g_rw_Ldo_tl
-\bool_new:N \l_rw_A_relative_bool
-\bool_new:N \l_rw_revert_random_bool
-\cs_new:Npn \rw_set_defaults:
+\cs_new:Npn \__randomwalk_set_defaults:
   {
-    \fp_set:Nn \l_rw_step_length_fp {10}
-    \int_set:Nn \l_rw_step_number_int {10}
-    \tl_gset:Nn \g_rw_Ado_tl { \rw_Ainterval:nn {-\c_pi_fp} {\c_pi_fp} }
-    \tl_gset:Nn \g_rw_Ldo_tl { \rw_Lfixed:n \l_rw_step_length_fp } %^^A bug?
-    \bool_set_false:N \l_rw_revert_random_bool
-    \bool_set_false:N \l_rw_A_relative_bool
+    \int_set:Nn \l__randomwalk_step_number_int {10}
+    \cs_gset_protected_nopar:Npn \__randomwalk_rand_angle:
+      { \__randomwalk_fp_set_rand:Nnn \l__randomwalk_angle_fp { - pi } { pi } }
+    \cs_gset_protected_nopar:Npn \__randomwalk_rand_length:
+      { \fp_set:Nn \l__randomwalk_length_fp {10} }
+    \bool_set_false:N \l__randomwalk_revert_random_bool
+    \bool_set_false:N \l__randomwalk_relative_angles_bool
   }
 \keys_define:nn { randomwalk }
   {
-    number .value_required:,
-    length .value_required:,
-    angles .value_required:,
-    number .code:n = {\int_set:Nn \l_rw_step_number_int {#1}},
+    number .value_required: ,
+    length .value_required: ,
+    angles .value_required: ,
+    number .int_set:N = \l__randomwalk_step_number_int ,
     length .code:n =
       {
-        \clist_set:Nn \l_rw_lengths_clist {#1}
-        \rw_clist_fp_from_dim:N \l_rw_lengths_clist
-        \int_compare:nNnTF { \clist_length:N \l_rw_lengths_clist } = {1}
-          { \tl_gset:Nn \g_rw_Ldo_tl { \rw_Lfixed:n \l_rw_lengths_clist } }
-          { \tl_gset:Nn \g_rw_Ldo_tl { \rw_Llist:N \l_rw_lengths_clist } }
-      },
+        \seq_set_split:Nnn \l__randomwalk_lengths_seq { , } {#1}
+        \seq_set_map:NNn \l__randomwalk_lengths_seq
+          \l__randomwalk_lengths_seq { \dim_to_fp:n {##1} }
+        \int_compare:nNnTF { \seq_length:N \l__randomwalk_lengths_seq } = {1}
+          {
+            \cs_gset_protected_nopar:Npn \__randomwalk_rand_length:
+              { \fp_set:Nn \l__randomwalk_length_fp {#1} }
+          }
+          {
+            \cs_gset_protected_nopar:Npn \__randomwalk_rand_length:
+              {
+                \__randomwalk_fp_set_rand_seq_item:NN
+                  \l__randomwalk_length_fp \l__randomwalk_lengths_seq
+              }
+          }
+      } ,
     angles .code:n  =
       {
-        \clist_set:Nn \l_rw_angles_clist {#1}
-        \tl_gset:Nn \g_rw_Ado_tl { \rw_Alist:N \l_rw_angles_clist }
-      },
-    degree .code:n  = { \rw_radians_from_degrees:N \l_rw_angles_clist },
-    degrees .code:n = { \rw_radians_from_degrees:N \l_rw_angles_clist },
-    angles-relative .code:n   = { \bool_set_true:N \l_rw_A_relative_bool },
-    revert-random .bool_set:N = \l_rw_revert_random_bool,
+        \seq_set_split:Nnn \l__randomwalk_angles_seq { , } {#1}
+        \cs_gset_protected_nopar:Npn \__randomwalk_rand_angle:
+          {
+            \bool_if:NTF \l__randomwalk_relative_angles_bool
+              { \__randomwalk_fp_add_rand_seq_item:NN }
+              { \__randomwalk_fp_set_rand_seq_item:NN }
+              \l__randomwalk_angle_fp \l__randomwalk_angles_seq
+          }
+      } ,
+    degree .code:n  =
+      { \__randomwalk_radians_from_degrees:N \l__randomwalk_angles_seq } ,
+    degrees .code:n =
+      { \__randomwalk_radians_from_degrees:N \l__randomwalk_angles_seq } ,
+    angles-relative .code:n =
+      { \bool_set_true:N \l__randomwalk_relative_angles_bool } ,
+    revert-random .bool_set:N = \l__randomwalk_revert_random_bool ,
   }
-\cs_new:Npn \rw_walk:
+\cs_new:Npn \__randomwalk_radians_from_degrees:N #1
+  { \seq_set_map:NNn #1 #1 { \fp_eval:n { ##1 deg } } }
+\cs_new:Npn \__randomwalk_walk:
   {
-    \fp_zero:N \l_rw_old_x_fp
-    \fp_zero:N \l_rw_old_y_fp
-    \fp_zero:N \l_rw_new_x_fp
-    \fp_zero:N \l_rw_new_y_fp
     \begin{tikzpicture}
-      \prg_replicate:nn { \l_rw_step_number_int } { \rw_step_draw: }
-      \bool_if:NF \l_rw_revert_random_bool
+      \fp_zero:N \l__randomwalk_old_x_fp
+      \fp_zero:N \l__randomwalk_old_y_fp
+      \fp_zero:N \l__randomwalk_new_x_fp
+      \fp_zero:N \l__randomwalk_new_y_fp
+      \prg_replicate:nn { \l__randomwalk_step_number_int } { \__randomwalk_step_draw: }
+      \bool_if:NF \l__randomwalk_revert_random_bool
         { \int_gset_eq:NN \cr@nd \cr@nd }
     \end{tikzpicture}
   }
-\cs_new:Npn \rw_step_draw:
+\cs_new:Npn \__randomwalk_step_draw:
   {
-    \g_rw_Ldo_tl
-    \g_rw_Ado_tl
-    \rw_cartesian_from_polar:NNNN
-      \l_rw_step_x_fp \l_rw_step_y_fp
-      \l_rw_radius_fp \l_rw_angle_fp
-    \fp_add:Nn \l_rw_new_x_fp { \l_rw_step_x_fp }
-    \fp_add:Nn \l_rw_new_y_fp { \l_rw_step_y_fp }
-    \draw ( \fp_to_dim:N \l_rw_old_x_fp, \fp_to_dim:N \l_rw_old_y_fp )
-       -- ( \fp_to_dim:N \l_rw_new_x_fp, \fp_to_dim:N \l_rw_new_y_fp );
-    \fp_set_eq:NN \l_rw_old_x_fp \l_rw_new_x_fp
-    \fp_set_eq:NN \l_rw_old_y_fp \l_rw_new_y_fp
+    \__randomwalk_rand_length:
+    \__randomwalk_rand_angle:
+    \fp_set_eq:NN \l__randomwalk_old_x_fp \l__randomwalk_new_x_fp
+    \fp_set_eq:NN \l__randomwalk_old_y_fp \l__randomwalk_new_y_fp
+    \fp_add:Nn \l__randomwalk_new_x_fp { \l__randomwalk_length_fp * cos \l__randomwalk_angle_fp }
+    \fp_add:Nn \l__randomwalk_new_y_fp { \l__randomwalk_length_fp * sin \l__randomwalk_angle_fp }
+    \draw ( \fp_to_dim:N \l__randomwalk_old_x_fp, \fp_to_dim:N \l__randomwalk_old_y_fp )
+       -- ( \fp_to_dim:N \l__randomwalk_new_x_fp, \fp_to_dim:N \l__randomwalk_new_y_fp );
   }
-\cs_new:Npn \rw_Lfixed:n #1
-  { \fp_set:Nn \l_rw_radius_fp {#1} }
-\cs_new:Npn \rw_Llist:N #1
-  { \rw_set_to_random_clist_element:NN \l_rw_radius_fp #1 }
-\cs_new:Npn \rw_Linterval:nn #1#2
-  { \rw_set_to_random_fp:Nnn \l_rw_radius_fp {#1} {#2} }
-\cs_new:Npn \rw_Ainterval:nn #1#2
-  {
-    \bool_if:NTF \l_rw_A_relative_bool
-      { \rw_add_to_random_fp:Nnn }
-      { \rw_set_to_random_fp:Nnn }
-      \l_rw_angle_fp {#1} {#2}
-  }
-\cs_new:Npn \rw_Alist:N #1
-  {
-    \bool_if:NTF \l_rw_A_relative_bool
-      { \rw_add_to_random_clist_element:NN }
-      { \rw_set_to_random_clist_element:NN }
-      \l_rw_angle_fp #1
-  }
-\cs_new_protected:Npn \rw_cartesian_from_polar:NNNN #1#2#3#4
-  {
-    \fp_cos:Nn #1 {\fp_use:N #4}
-    \fp_sin:Nn #2 {\fp_use:N #4}
-    \fp_mul:Nn #1 {\fp_use:N #3}
-    \fp_mul:Nn #2 {\fp_use:N #3}
-  }
-\cs_new_protected:Npn \rw_gcartesian_from_polar:NNNN #1#2#3#4
-  {
-    \fp_gcos:Nn #1 {\fp_use:N #4}
-    \fp_gsin:Nn #2 {\fp_use:N #4}
-    \fp_gmul:Nn #1 {\fp_use:N #3}
-    \fp_gmul:Nn #2 {\fp_use:N #3}
-  }
-\cs_new:Npn \rw_set_to_random_int:Nnn #1#2#3
+\cs_new:Npn \__randomwalk_int_set_rand:Nnn #1#2#3
   {
     \rand
     \int_set:Nn #1 { #2 + \int_mod:nn {\c@lcg@rand} { #3 + 1 - (#2) } }
   }
-\cs_new:Npn \rw_set_to_random_fp:Nnn #1#2#3
+\cs_new_nopar:Npn \__randomwalk_fp_set_rand:Nnn
+  { \__randomwalk_fp_set_rand_aux:NNnn \fp_set:Nn }
+\cs_new_nopar:Npn \__randomwalk_fp_add_rand:Nnn
+  { \__randomwalk_fp_set_rand_aux:NNnn \fp_add:Nn }
+\cs_new:Npn \__randomwalk_fp_set_rand_aux:NNnn #1#2#3#4
   {
-    \fp_set:Nn \l_rw_tmpa_fp {#3}
-    \fp_sub:Nn \l_rw_tmpa_fp {#2}
     \rand
-    \fp_set:Nn \l_rw_tmpb_fp { \int_use:N \c@lcg@rand }
-    \fp_div:Nn \l_rw_tmpb_fp { \int_use:N \c_rw_lcg_range_int }
-    \fp_mul:Nn \l_rw_tmpa_fp { \l_rw_tmpb_fp }
-    \fp_add:Nn \l_rw_tmpa_fp {#2}
-    \fp_set:Nn #1 { \l_rw_tmpa_fp }
+    #1 #2 { #3 + (#4 - (#3)) * \c@lcg@rand / \c__randomwalk_lcg_last_int }
   }
-\cs_new:Npn \rw_add_to_random_fp:Nnn #1#2#3
+\cs_new_protected_nopar:Npn \__randomwalk_fp_set_rand_seq_item:NN
+  { \__randomwalk_fp_set_rand_item_aux:NNNNN \fp_set:Nn \seq_item:Nn \seq_length:N }
+\cs_new_protected_nopar:Npn \__randomwalk_fp_add_rand_seq_item:NN
+  { \__randomwalk_fp_set_rand_item_aux:NNNNN \fp_add:Nn \seq_item:Nn \seq_length:N }
+\cs_new_protected:Npn \__randomwalk_fp_set_rand_item_aux:NNNNN #1#2#3#4#5
   {
-    \fp_set:Nn \l_rw_tmpa_fp {#3}
-    \fp_sub:Nn \l_rw_tmpa_fp {#2}
     \rand
-    \fp_set:Nn \l_rw_tmpb_fp { \int_use:N \c@lcg@rand }
-    \fp_div:Nn \l_rw_tmpb_fp { \int_use:N \c_rw_lcg_range_int }
-    \fp_mul:Nn \l_rw_tmpa_fp { \l_rw_tmpb_fp }
-    \fp_add:Nn \l_rw_tmpa_fp {#2}
-    \fp_add:Nn #1 { \l_rw_tmpa_fp } %here: mod?
+    #1 #4 { #2 #5 { 1 + \int_mod:nn { \c@lcg@rand } { #3 #5 } } }
   }
-\cs_new:Npn \rw_set_to_random_clist_element:NN #1#2
-  {
-    \rw_set_to_random_int:Nnn \l_rw_tmpb_int {1} { \clist_length:N #2 }
-    \fp_set:Nn #1 { \clist_item:Nn #2 { \l_rw_tmpb_int } }
-  }
-\cs_new:Npn \rw_add_to_random_clist_element:NN #1#2
-  {
-    \rw_set_to_random_int:Nnn \l_rw_tmpb_int {1} { \clist_length:N #2 }
-    \fp_add:Nn #1 { \clist_item:Nn #2 { \l_rw_tmpb_int } }
-  }
-\cs_new:Npn \rw_radians_from_degrees:N #1
-  {
-    \clist_clear:N \l_rw_tmpa_clist
-    \clist_map_inline:Nn #1
-      {
-        \fp_set:Nn \l_rw_tmpa_fp {##1}
-        \fp_mul:Nn \l_rw_tmpa_fp { \c_rw_one_degree_fp }
-        \clist_push:NV \l_rw_tmpa_clist \l_rw_tmpa_fp
-      }
-    \clist_set_eq:NN #1 \l_rw_tmpa_clist
-  }
-\cs_new:Npn \rw_clist_fp_from_dim:N #1
-  {
-    \clist_clear:N \l_rw_tmpa_clist
-    \clist_map_inline:Nn #1
-      {
-        \fp_set_from_dim:Nn \l_rw_tmpa_fp {##1}
-        \clist_push:NV \l_rw_tmpa_clist \l_rw_tmpa_fp
-      }
-    \clist_set_eq:NN #1 \l_rw_tmpa_clist
-  }
-\fp_new:N \l_rw_old_x_fp
-\fp_new:N \l_rw_old_y_fp
-\fp_new:N \l_rw_step_x_fp
-\fp_new:N \l_rw_step_y_fp
-\fp_new:N \l_rw_new_x_fp
-\fp_new:N \l_rw_new_y_fp
-\fp_new:N \l_rw_angle_fp
-\fp_new:N \l_rw_step_length_fp
-\fp_new:N \l_rw_radius_fp
-\int_new:N \l_rw_step_number_int
-\clist_new:N \l_rw_angles_clist
-\clist_new:N \l_rw_lengths_clist
-\fp_new:N \l_rw_tmpa_fp
-\fp_new:N \l_rw_tmpb_fp
-\clist_new:N \l_rw_tmpa_clist
-\int_new:N \l_rw_tmpb_int
 %% 
 %%
 %% End of file `randomwalk.sty'.
