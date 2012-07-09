@@ -1,0 +1,463 @@
+% \iffalse
+%% File: randomwalk.dtx Copyright (C) 2011-2012 Bruno Le Floch
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% -----------------------------------------------------------------------
+%
+%<*driver|package>
+\RequirePackage{l3names}
+%</driver|package>
+%<*driver>
+%\fi
+\ProvidesFile{randomwalk.dtx}
+  [2012-07-10 v0.2 Customizable Random Walks using TikZ]
+%\iffalse
+\RequirePackage[check-declarations]{expl3}
+\documentclass[full]{l3doc}
+\usepackage{randomwalk}
+\usepackage{amsmath}
+\begin{document}
+  \DocInput{randomwalk.dtx}
+\end{document}
+%</driver>
+% \fi
+%
+%
+% \title{The \textsf{randomwalk} package: \\
+%   customizable random walks using TikZ\thanks{This file has version
+%     number 0.2, last revised 2012-07-10.}}
+% \author{Bruno Le Floch}
+% \date{July 10, 2012}
+%
+% \maketitle
+% \tableofcontents
+%
+% \begin{documentation}
+%
+% \begin{abstract}
+%
+% The \pkg{randomwalk} package draws random walks using TikZ. The
+% following parameters can be customized:
+% \begin{itemize}
+%   \item The number of steps, of course.
+%   \item The length of the steps, either a fixed length, or a length
+%     taken at random from a given set.
+%   \item The angle of each step, either taken at random from a given
+%     set, or uniformly distributed.
+% \end{itemize}
+%
+% \end{abstract}
+%
+%
+% \section{How to use it}
+%
+% The \pkg{randomwalk} package has exactly one user command:
+% \cs{RandomWalk}, which takes a list of key-value pairs as its
+% argument. A few examples:
+% \begin{verbatim}
+% \RandomWalk {number = 100, length = {4pt, 10pt}}
+% \RandomWalk {number = 100, angles = {0,60,120,180,240,300}, degree}
+% \RandomWalk {number = 100, length = 2em,
+%   angles = {0,10,20,-10,-20}, degree, angles-relative}
+% \end{verbatim}
+% The simplest is to give a list of all the keys, and their meaning:
+% \begin{itemize}
+%   \item \texttt{number}: the number of steps (default \(10\))
+%   \item \texttt{length}: the length of each step: either one dimension
+%     (\emph{e.g.}, |1em|), or a comma-separated list of dimensions
+%     (\emph{e.g.}, |{2pt, 5pt}|), by default |10pt|. The length of each
+%     step is a random element in this set of possible dimensions.
+%   \item \texttt{angles}: the polar angle for each step: a
+%     comma-separated list of angles, and each step takes a random angle
+%     among the list. If this is not specified, then the angle is
+%     uniformly distributed along the circle.
+%   \item \texttt{degree} or \texttt{degrees}: specify that the angles
+%     are given in degrees.
+%   \item \texttt{angles-relative}: instead of being absolute, the
+%     angles are relative to the direction of the previous step.
+% \end{itemize}
+%
+% \begin{figure}
+%   \begin{center}
+%     \framebox{\RandomWalk {number = 400, length = {4pt, 10pt}}}
+%     \caption{The result of \texttt{RandomWalk\{number\ =\ 400,\
+%         length\ =\ \{4pt,\ 10pt\}\}}: a \(400\) steps long walk, where
+%       each step has one of two lengths.}
+%   \end{center}
+% \end{figure}
+%
+% \begin{figure}
+%   \begin{center}
+%     \framebox{\RandomWalk{number = 100, angles =
+%         {0,60,120,180,240,300}, degrees}}
+%     \caption{The result of \texttt{\string\RandomWalk\{number\ =\
+%         100,\ angles\ =\ \{0,60,120,180,240,300\}, degrees\}}: angles
+%       are constrained.}
+%   \end{center}
+% \end{figure}
+%
+% \begin{figure}
+%   \begin{center}
+%     \framebox{\RandomWalk {number = 40, length = 1em, angles =
+%         {0,15,30,-15,-30}, degree, angles-relative}}
+%     \caption{A last example: \texttt{\string\RandomWalk\ \{number\ =\
+%         100,\ length\ =\ 2em,\ angles\ =\ \{0,10,20,-10,-20\},\
+%         degree,\ angles-relative\}}}
+%   \end{center}
+% \end{figure}
+%
+% \end{documentation}
+%
+% \begin{implementation}
+%
+% \section{\pkg{randomwalk} implementation}
+%
+% \subsection{Packages}
+%
+% The whole \pkg{expl3} bundle is loaded first.
+%
+%<*package>
+%    \begin{macrocode}
+\ProvidesExplPackage
+  {\ExplFileName}{\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+\RequirePackage{expl3}
+\RequirePackage{xparse}
+%    \end{macrocode}
+%
+% I use some \LaTeXe{} packages: \pkg{TikZ}, for figures, and \pkg{lcg}
+% for random numbers.
+%    \begin{macrocode}
+\RequirePackage{tikz}
+%    \end{macrocode}
+%
+% \pkg{lcg} needs to know the smallest and biggest random numbers that
+% it should produce, \cs{c_rw_lcg_first} and |_last|. It will then store
+% them in \cs{c@lcg@rand}: the |\c@| is there because of how \LaTeXe{}
+% defines counters. To make it clear that |\c| has a very special
+% meaning here, I do not follow \LaTeX3 naming conventions.
+%
+% The \pkg{lcg} package would support a range of \( 2^{31} - 1 \), but
+% \pkg{l3fp} constrains us to \(9\) digit numbers, so we take the
+% closest available power of \(2\), namely \( 536870911 = 2^{29} - 1 \).
+%
+%    \begin{macrocode}
+\int_const:Nn \c_rw_lcg_first_int {0}
+\int_const:Nn \c_rw_lcg_last_int  {536870911}
+\int_const:Nn \c_rw_lcg_range_int
+  { \c_rw_lcg_last_int - \c_rw_lcg_first_int }
+\RequirePackage
+  [
+    first= \c_rw_lcg_first_int,
+    last = \c_rw_lcg_last_int,
+    counter = lcg@rand
+  ]
+  { lcg }
+\rand % This \rand avoids some very odd bug.
+%    \end{macrocode}
+%
+% We need this constant for fast conversion from degrees to radians later.
+%    \begin{macrocode}
+\fp_const:Nn \c_rw_one_degree_fp {+1.74532925e-2}
+%    \end{macrocode}
+%
+%
+% \subsection{How the key-value list is treated}
+%
+% \begin{macro}{\RandomWalk}
+%   The only user command is \cs{RandomWalk}: it simply does the setup, and
+%   calls the internal macro \cs{rw_walk:}.
+%    \begin{macrocode}
+\DeclareDocumentCommand \RandomWalk { m }
+  {
+    \rw_set_defaults:
+    \keys_set:nn { randomwalk } { #1 }
+    \rw_walk:
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\g_rw_Ado_tl}
+% \begin{macro}{\g_rw_Ldo_tl}
+% \begin{macro}{\rw_set_defaults:}
+%   Currently, the package treats the length of steps, and the angle,
+%   completely independently. The token list \cs{g_rw_Ldo_tl} contains
+%   the action that should be done to decide the length of the next step,
+%   while the token list \cs{g_rw_Ado_tl} pertains to the angle.
+%
+%   \cs{rw_set_defaults:} sets the default values before processing the user's
+%   key-value input.
+%    \begin{macrocode}
+\tl_new:N \g_rw_Ado_tl
+\tl_new:N \g_rw_Ldo_tl
+\bool_new:N \l_rw_A_relative_bool
+\bool_new:N \l_rw_revert_random_bool
+\cs_new:Npn \rw_set_defaults:
+  {
+    \fp_set:Nn \l_rw_step_length_fp {10}
+    \int_set:Nn \l_rw_step_number_int {10}
+    \tl_gset:Nn \g_rw_Ado_tl { \rw_Ainterval:nn {-\c_pi_fp} {\c_pi_fp} }
+    \tl_gset:Nn \g_rw_Ldo_tl { \rw_Lfixed:n \l_rw_step_length_fp } %^^A bug?
+    \bool_set_false:N \l_rw_revert_random_bool
+    \bool_set_false:N \l_rw_A_relative_bool
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\keys_define:nn}
+%   We introduce the keys for the package.
+%    \begin{macrocode}
+\keys_define:nn { randomwalk }
+  {
+    number .value_required:,
+    length .value_required:,
+    angles .value_required:,
+    number .code:n = {\int_set:Nn \l_rw_step_number_int {#1}},
+    length .code:n =
+      {
+        \clist_set:Nn \l_rw_lengths_clist {#1}
+        \rw_clist_fp_from_dim:N \l_rw_lengths_clist
+        \int_compare:nNnTF { \clist_length:N \l_rw_lengths_clist } = {1}
+          { \tl_gset:Nn \g_rw_Ldo_tl { \rw_Lfixed:n \l_rw_lengths_clist } }
+          { \tl_gset:Nn \g_rw_Ldo_tl { \rw_Llist:N \l_rw_lengths_clist } }
+      },
+    angles .code:n  =
+      {
+        \clist_set:Nn \l_rw_angles_clist {#1}
+        \tl_gset:Nn \g_rw_Ado_tl { \rw_Alist:N \l_rw_angles_clist }
+      },
+    degree .code:n  = { \rw_radians_from_degrees:N \l_rw_angles_clist },
+    degrees .code:n = { \rw_radians_from_degrees:N \l_rw_angles_clist },
+    angles-relative .code:n   = { \bool_set_true:N \l_rw_A_relative_bool },
+    revert-random .bool_set:N = \l_rw_revert_random_bool,
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \subsection{Drawing}
+%
+% \begin{macro}{\rw_walk:}
+%   We are ready to define \cs{rw_walk:}, which draws a \pkg{TikZ}
+%   picture of a random walk with the parameters set up by the
+%   \texttt{keys}.  We reset all the coordinates to zero originally.
+%   Then we draw the relevant \pkg{TikZ} picture by repeatedly calling
+%   \cs{rw_step_draw:}.
+%    \begin{macrocode}
+\cs_new:Npn \rw_walk:
+  {
+    \fp_zero:N \l_rw_old_x_fp
+    \fp_zero:N \l_rw_old_y_fp
+    \fp_zero:N \l_rw_new_x_fp
+    \fp_zero:N \l_rw_new_y_fp
+    \begin{tikzpicture}
+      \prg_replicate:nn { \l_rw_step_number_int } { \rw_step_draw: }
+      \bool_if:NF \l_rw_revert_random_bool
+        { \int_gset_eq:NN \cr@nd \cr@nd }
+    \end{tikzpicture}
+  }
+%    \end{macrocode}
+%   \cs{cr@nd} is internal to the lcg package.
+% \end{macro}
+%
+% \begin{macro}{\rw_step_draw:}
+%   \cs{rw_step_draw:} passes its second argument \emph{with one level of
+%     braces removed} to its first argument, responsible for making a random
+%   step. Then, \cs{rw_step_draw:} draws the random step.
+%    \begin{macrocode}
+\cs_new:Npn \rw_step_draw:
+  {
+    \g_rw_Ldo_tl
+    \g_rw_Ado_tl
+    \rw_cartesian_from_polar:NNNN
+      \l_rw_step_x_fp \l_rw_step_y_fp
+      \l_rw_radius_fp \l_rw_angle_fp
+    \fp_add:Nn \l_rw_new_x_fp { \l_rw_step_x_fp }
+    \fp_add:Nn \l_rw_new_y_fp { \l_rw_step_y_fp }
+    \draw ( \fp_to_dim:N \l_rw_old_x_fp, \fp_to_dim:N \l_rw_old_y_fp )
+       -- ( \fp_to_dim:N \l_rw_new_x_fp, \fp_to_dim:N \l_rw_new_y_fp );
+    \fp_set_eq:NN \l_rw_old_x_fp \l_rw_new_x_fp
+    \fp_set_eq:NN \l_rw_old_y_fp \l_rw_new_y_fp
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% The next couple of macros store a random floating point in
+% \cs{l_rw_length_fp} or \cs{l_rw_angle_fp}.
+%
+% \begin{macro}{\rw_L..:.}
+%   First for the length of steps.
+%    \begin{macrocode}
+\cs_new:Npn \rw_Lfixed:n #1
+  { \fp_set:Nn \l_rw_radius_fp {#1} }
+\cs_new:Npn \rw_Llist:N #1
+  { \rw_set_to_random_clist_element:NN \l_rw_radius_fp #1 }
+\cs_new:Npn \rw_Linterval:nn #1#2
+  { \rw_set_to_random_fp:Nnn \l_rw_radius_fp {#1} {#2} }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\rw_A..:.}
+%   Then for angles.
+%    \begin{macrocode}
+\cs_new:Npn \rw_Ainterval:nn #1#2
+  {
+    \bool_if:NTF \l_rw_A_relative_bool
+      { \rw_add_to_random_fp:Nnn }
+      { \rw_set_to_random_fp:Nnn }
+      \l_rw_angle_fp {#1} {#2}
+  }
+\cs_new:Npn \rw_Alist:N #1
+  {
+    \bool_if:NTF \l_rw_A_relative_bool
+      { \rw_add_to_random_clist_element:NN }
+      { \rw_set_to_random_clist_element:NN }
+      \l_rw_angle_fp #1
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\rw_cartesian_from_polar:NNNN}
+%   The four arguments of \cs{rw_cartesian_from_polar:NNNN} are
+%   \( (x, y, r, \theta) \): it sets \( (x, y) \) equal to the cartesian
+%   coordinates corresponding to a radius \(r\) and an angle \( \theta \).
+%   We also give a version with global assignments.
+%    \begin{macrocode}
+\cs_new_protected:Npn \rw_cartesian_from_polar:NNNN #1#2#3#4
+  {
+    \fp_cos:Nn #1 {\fp_use:N #4}
+    \fp_sin:Nn #2 {\fp_use:N #4}
+    \fp_mul:Nn #1 {\fp_use:N #3}
+    \fp_mul:Nn #2 {\fp_use:N #3}
+  }
+\cs_new_protected:Npn \rw_gcartesian_from_polar:NNNN #1#2#3#4
+  {
+    \fp_gcos:Nn #1 {\fp_use:N #4}
+    \fp_gsin:Nn #2 {\fp_use:N #4}
+    \fp_gmul:Nn #1 {\fp_use:N #3}
+    \fp_gmul:Nn #2 {\fp_use:N #3}
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% We cannot yet do the conversion in the other direction: \pkg{l3fp.dtx}
+% does not yet provide inverse trigonometric functions.  But in fact, we
+% do not need this conversion, so let's stop worrying.
+%
+% \subsection{On random numbers etc.}
+%
+% For random numbers, the interface of \pkg{lcg} is not quite enough, so
+% we provide our own \LaTeX3-y functions.  Also, this will allow us to
+% change quite easily our source of random numbers.
+%
+%    \begin{macrocode}
+\cs_new:Npn \rw_set_to_random_int:Nnn #1#2#3
+  {
+    \rand
+    \int_set:Nn #1 { #2 + \int_mod:nn {\c@lcg@rand} { #3 + 1 - (#2) } }
+  }
+%    \end{macrocode}
+% We also need floating point random numbers.
+%    \begin{macrocode}
+\cs_new:Npn \rw_set_to_random_fp:Nnn #1#2#3
+  {
+    \fp_set:Nn \l_rw_tmpa_fp {#3}
+    \fp_sub:Nn \l_rw_tmpa_fp {#2}
+    \rand
+    \fp_set:Nn \l_rw_tmpb_fp { \int_use:N \c@lcg@rand }
+    \fp_div:Nn \l_rw_tmpb_fp { \int_use:N \c_rw_lcg_range_int }
+    \fp_mul:Nn \l_rw_tmpa_fp { \l_rw_tmpb_fp }
+    \fp_add:Nn \l_rw_tmpa_fp {#2}
+    \fp_set:Nn #1 { \l_rw_tmpa_fp }
+  }
+\cs_new:Npn \rw_add_to_random_fp:Nnn #1#2#3
+  {
+    \fp_set:Nn \l_rw_tmpa_fp {#3}
+    \fp_sub:Nn \l_rw_tmpa_fp {#2}
+    \rand
+    \fp_set:Nn \l_rw_tmpb_fp { \int_use:N \c@lcg@rand }
+    \fp_div:Nn \l_rw_tmpb_fp { \int_use:N \c_rw_lcg_range_int }
+    \fp_mul:Nn \l_rw_tmpa_fp { \l_rw_tmpb_fp }
+    \fp_add:Nn \l_rw_tmpa_fp {#2}
+    \fp_add:Nn #1 { \l_rw_tmpa_fp } %here: mod?
+  }
+%    \end{macrocode}
+%
+% We can now pick an element at random from a comma-separated list
+%    \begin{macrocode}
+\cs_new:Npn \rw_set_to_random_clist_element:NN #1#2
+  {
+    \rw_set_to_random_int:Nnn \l_rw_tmpb_int {1} { \clist_length:N #2 }
+    \fp_set:Nn #1 { \clist_item:Nn #2 { \l_rw_tmpb_int } }
+  }
+\cs_new:Npn \rw_add_to_random_clist_element:NN #1#2
+  {
+    \rw_set_to_random_int:Nnn \l_rw_tmpb_int {1} { \clist_length:N #2 }
+    \fp_add:Nn #1 { \clist_item:Nn #2 { \l_rw_tmpb_int } }
+  }
+%    \end{macrocode}
+%
+% \subsection{Other comma list operations}
+%
+% More stuff on clists.
+%
+%    \begin{macrocode}
+\cs_new:Npn \rw_radians_from_degrees:N #1
+  {
+    \clist_clear:N \l_rw_tmpa_clist
+    \clist_map_inline:Nn #1
+      {
+        \fp_set:Nn \l_rw_tmpa_fp {##1}
+        \fp_mul:Nn \l_rw_tmpa_fp { \c_rw_one_degree_fp }
+        \clist_push:NV \l_rw_tmpa_clist \l_rw_tmpa_fp
+      }
+    \clist_set_eq:NN #1 \l_rw_tmpa_clist
+  }
+\cs_new:Npn \rw_clist_fp_from_dim:N #1
+  {
+    \clist_clear:N \l_rw_tmpa_clist
+    \clist_map_inline:Nn #1
+      {
+        \fp_set_from_dim:Nn \l_rw_tmpa_fp {##1}
+        \clist_push:NV \l_rw_tmpa_clist \l_rw_tmpa_fp
+      }
+    \clist_set_eq:NN #1 \l_rw_tmpa_clist
+  }
+%    \end{macrocode}
+%
+% \subsection{Variables}
+%
+% We need a bunch of floating point numbers: each step line goes from
+% the |_old| point to the |_new| point. The coordinates |_add| are those
+% of the vector from one to the next, so that |_new = _old + _add|.
+%    \begin{macrocode}
+\fp_new:N \l_rw_old_x_fp
+\fp_new:N \l_rw_old_y_fp
+\fp_new:N \l_rw_step_x_fp
+\fp_new:N \l_rw_step_y_fp
+\fp_new:N \l_rw_new_x_fp
+\fp_new:N \l_rw_new_y_fp
+\fp_new:N \l_rw_angle_fp
+\fp_new:N \l_rw_step_length_fp
+\fp_new:N \l_rw_radius_fp
+\int_new:N \l_rw_step_number_int
+\clist_new:N \l_rw_angles_clist
+\clist_new:N \l_rw_lengths_clist
+\fp_new:N \l_rw_tmpa_fp
+\fp_new:N \l_rw_tmpb_fp
+\clist_new:N \l_rw_tmpa_clist
+\int_new:N \l_rw_tmpb_int
+%    \end{macrocode}
+%</package>
+%
+% \end{implementation}
+%
+% \endinput
