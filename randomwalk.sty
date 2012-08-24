@@ -24,19 +24,22 @@
 %% -----------------------------------------------------------------------
 \RequirePackage{l3names}
 \ProvidesExplPackage
-  {\ExplFileName}{\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+  {randomwalk.sty}{2012/07/10}{0.2}{Customizable random walks using TikZ}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 \RequirePackage{tikz}
 \int_const:Nn \c__randomwalk_lcg_last_int { \c_max_int - \c_one }
-\RequirePackage
-  [
-    first= \c_zero ,
-    last = \c__randomwalk_lcg_last_int ,
-    counter = lcg@rand
-  ]
-  { lcg }
-\rand % This \rand avoids some very odd bug.
+\AtBeginDocument
+  {
+    \RequirePackage
+      [
+        first= \c_zero ,
+        last = \c__randomwalk_lcg_last_int ,
+        counter = lcg@rand
+      ]
+      { lcg }
+    \rand % This \rand avoids some very odd bug.
+  }
 \int_new:N \l__randomwalk_step_number_int
 \bool_new:N \l__randomwalk_relative_angles_bool
 \bool_new:N \l__randomwalk_revert_random_bool

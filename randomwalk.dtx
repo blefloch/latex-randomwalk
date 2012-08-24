@@ -16,7 +16,7 @@
 %<*driver>
 %\fi
 \ProvidesFile{randomwalk.dtx}
-  [2012-07-10 v0.2 Customizable Random Walks using TikZ]
+  [2012-07-10 v0.2 Customizable random walks using TikZ]
 %\iffalse
 \RequirePackage[check-declarations]{expl3}
 \documentclass[full]{l3doc}
@@ -129,7 +129,7 @@
 %
 %    \begin{macrocode}
 \ProvidesExplPackage
-  {\ExplFileName}{\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+  {randomwalk.sty}{2012/07/10}{0.2}{Customizable random walks using TikZ}
 \RequirePackage{expl3}
 \RequirePackage{xparse}
 %    \end{macrocode}
@@ -146,16 +146,22 @@
 % there because of how \LaTeXe{} defines counters. To make it clear that
 % |\c| has a very special meaning here, I do not follow \LaTeX3 naming
 % conventions.
+%
+% It seems that the \pkg{lcg} package has to be loaded after the
+% document class, hence we do it \cs{AtBeginDocument}.
 %    \begin{macrocode}
 \int_const:Nn \c_@@_lcg_last_int { \c_max_int - \c_one }
-\RequirePackage
-  [
-    first= \c_zero ,
-    last = \c_@@_lcg_last_int ,
-    counter = lcg@rand
-  ]
-  { lcg }
-\rand % This \rand avoids some very odd bug.
+\AtBeginDocument
+  {
+    \RequirePackage
+      [
+        first= \c_zero ,
+        last = \c_@@_lcg_last_int ,
+        counter = lcg@rand
+      ]
+      { lcg }
+    \rand % This \rand avoids some very odd bug.
+  }
 %    \end{macrocode}
 %
 % \subsection{Variables}

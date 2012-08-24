@@ -8,7 +8,7 @@ The randomwalk package provides a user command, `\RandomWalk`, to draw
 random walks with a given number of steps.  Lengths and angles of the
 steps can be customized in various ways.
 
-This package uses `TikZ`.  It also uses the `expl3` and `l3packages`
+This package uses `TikZ`.  It also uses the `l3kernel` and `l3packages`
 bundles.
 
 
