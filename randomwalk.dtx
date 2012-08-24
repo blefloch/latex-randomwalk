@@ -11,13 +11,8 @@
 %% -----------------------------------------------------------------------
 %
 %<*driver|package>
-\RequirePackage{l3names}
 %</driver|package>
 %<*driver>
-%\fi
-\ProvidesFile{randomwalk.dtx}
-  [2012-07-10 v0.2 Customizable random walks using TikZ]
-%\iffalse
 \RequirePackage[check-declarations]{expl3}
 \documentclass[full]{l3doc}
 \usepackage{randomwalk}
@@ -31,9 +26,9 @@
 %
 % \title{The \textsf{randomwalk} package: \\
 %   customizable random walks using TikZ\thanks{This file has version
-%     number 0.2, last revised 2012-07-10.}}
+%     number 0.2b, last revised 2012-08-24.}}
 % \author{Bruno Le Floch}
-% \date{July 10, 2012}
+% \date{August 24, 2012}
 %
 % \maketitle
 % \tableofcontents
@@ -128,16 +123,16 @@
 %    \end{macrocode}
 %
 %    \begin{macrocode}
+\RequirePackage {expl3} [2012/08/14]
 \ProvidesExplPackage
-  {randomwalk.sty}{2012/07/10}{0.2}{Customizable random walks using TikZ}
-\RequirePackage{expl3}
-\RequirePackage{xparse}
+  {randomwalk.sty} {2012/08/24} {0.2b} {Customizable random walks using TikZ}
+\RequirePackage {xparse} [2012/08/14]
 %    \end{macrocode}
 %
 % I use some \LaTeXe{} packages: \pkg{TikZ}, for figures, and \pkg{lcg}
 % for random numbers.
 %    \begin{macrocode}
-\RequirePackage{tikz}
+\RequirePackage {tikz}
 %    \end{macrocode}
 %
 % \pkg{lcg} needs to know the smallest and biggest random numbers that
