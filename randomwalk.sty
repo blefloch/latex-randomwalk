@@ -12,7 +12,7 @@
 %% to Bruno Le Floch (see the latex-randomwalk repository
 %% on GitHub).
 %% 
-%% File: randomwalk.dtx Copyright (C) 2011-2012 Bruno Le Floch
+%% File: randomwalk.dtx Copyright (C) 2011-2013 Bruno Le Floch
 %%
 %% It may be distributed and/or modified under the conditions of the
 %% LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -24,7 +24,7 @@
 %% -----------------------------------------------------------------------
 \RequirePackage {expl3} [2012/08/14]
 \ProvidesExplPackage
-  {randomwalk.sty} {2012/08/24} {0.2b} {Customizable random walks using TikZ}
+  {randomwalk.sty} {2013/01/08} {0.2c} {Customizable random walks using TikZ}
 \RequirePackage {xparse} [2012/08/14]
 \RequirePackage {tikz}
 \int_const:Nn \c__randomwalk_lcg_last_int { \c_max_int - \c_one }
@@ -79,7 +79,7 @@
         \seq_set_split:Nnn \l__randomwalk_lengths_seq { , } {#1}
         \seq_set_map:NNn \l__randomwalk_lengths_seq
           \l__randomwalk_lengths_seq { \dim_to_fp:n {##1} }
-        \int_compare:nNnTF { \seq_length:N \l__randomwalk_lengths_seq } = {1}
+        \int_compare:nNnTF { \seq_count:N \l__randomwalk_lengths_seq } = {1}
           {
             \cs_gset_protected_nopar:Npn \__randomwalk_rand_length:
               { \fp_set:Nn \l__randomwalk_length_fp {#1} }
@@ -151,9 +151,9 @@
     #1 #2 { #3 + (#4 - (#3)) * \c@lcg@rand / \c__randomwalk_lcg_last_int }
   }
 \cs_new_protected_nopar:Npn \__randomwalk_fp_set_rand_seq_item:NN
-  { \__randomwalk_fp_set_rand_item_aux:NNNNN \fp_set:Nn \seq_item:Nn \seq_length:N }
+  { \__randomwalk_fp_set_rand_item_aux:NNNNN \fp_set:Nn \seq_item:Nn \seq_count:N }
 \cs_new_protected_nopar:Npn \__randomwalk_fp_add_rand_seq_item:NN
-  { \__randomwalk_fp_set_rand_item_aux:NNNNN \fp_add:Nn \seq_item:Nn \seq_length:N }
+  { \__randomwalk_fp_set_rand_item_aux:NNNNN \fp_add:Nn \seq_item:Nn \seq_count:N }
 \cs_new_protected:Npn \__randomwalk_fp_set_rand_item_aux:NNNNN #1#2#3#4#5
   {
     \rand

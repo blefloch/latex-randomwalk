@@ -1,5 +1,5 @@
 % \iffalse
-%% File: randomwalk.dtx Copyright (C) 2011-2012 Bruno Le Floch
+%% File: randomwalk.dtx Copyright (C) 2011-2013 Bruno Le Floch
 %%
 %% It may be distributed and/or modified under the conditions of the
 %% LaTeX Project Public License (LPPL), either version 1.3c of this
@@ -26,9 +26,9 @@
 %
 % \title{The \textsf{randomwalk} package: \\
 %   customizable random walks using TikZ\thanks{This file has version
-%     number 0.2b, last revised 2012-08-24.}}
+%     number 0.2c, last revised 2013-01-08.}}
 % \author{Bruno Le Floch}
-% \date{August 24, 2012}
+% \date{January 08, 2013}
 %
 % \maketitle
 % \tableofcontents
@@ -125,7 +125,7 @@
 %    \begin{macrocode}
 \RequirePackage {expl3} [2012/08/14]
 \ProvidesExplPackage
-  {randomwalk.sty} {2012/08/24} {0.2b} {Customizable random walks using TikZ}
+  {randomwalk.sty} {2013/01/08} {0.2c} {Customizable random walks using TikZ}
 \RequirePackage {xparse} [2012/08/14]
 %    \end{macrocode}
 %
@@ -273,7 +273,7 @@
         \seq_set_split:Nnn \l_@@_lengths_seq { , } {#1}
         \seq_set_map:NNn \l_@@_lengths_seq
           \l_@@_lengths_seq { \dim_to_fp:n {##1} }
-        \int_compare:nNnTF { \seq_length:N \l_@@_lengths_seq } = {1}
+        \int_compare:nNnTF { \seq_count:N \l_@@_lengths_seq } = {1}
           {
             \cs_gset_protected_nopar:Npn \@@_rand_length:
               { \fp_set:Nn \l_@@_length_fp {#1} }
@@ -405,9 +405,9 @@
 %   could be used for picking random items from other types of lists.
 %    \begin{macrocode}
 \cs_new_protected_nopar:Npn \@@_fp_set_rand_seq_item:NN
-  { \@@_fp_set_rand_item_aux:NNNNN \fp_set:Nn \seq_item:Nn \seq_length:N }
+  { \@@_fp_set_rand_item_aux:NNNNN \fp_set:Nn \seq_item:Nn \seq_count:N }
 \cs_new_protected_nopar:Npn \@@_fp_add_rand_seq_item:NN
-  { \@@_fp_set_rand_item_aux:NNNNN \fp_add:Nn \seq_item:Nn \seq_length:N }
+  { \@@_fp_set_rand_item_aux:NNNNN \fp_add:Nn \seq_item:Nn \seq_count:N }
 \cs_new_protected:Npn \@@_fp_set_rand_item_aux:NNNNN #1#2#3#4#5
   {
     \rand
