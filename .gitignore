@@ -28,3 +28,4 @@
 *.mtc0
 *.zip
 texput.*
+build/
