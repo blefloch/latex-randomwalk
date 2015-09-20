@@ -1,4 +1,4 @@
-Random Walks for LaTeX using TikZ
+Random Walks for LaTeX
 =================================
 * E-mail: blflatex@gmail.com
 * Released under the LaTeX Project Public License v1.3c or later
