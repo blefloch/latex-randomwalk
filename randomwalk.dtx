@@ -156,7 +156,8 @@
 % conventions.  Also of note is that I use \cs{cr@nd} in \cs{@@_walk:}.
 %
 % It seems that the \pkg{lcg} package has to be loaded after the
-% document class, hence we do it \cs{AtBeginDocument}.
+% document class, hence we do it \cs{AtBeginDocument}.  Also worth noting
+% is the call to \cs{rand}, which avoids some very odd bug.
 %    \begin{macrocode}
 \int_const:Nn \c_@@_lcg_last_int { \c_max_int - \c_one }
 \AtBeginDocument
@@ -168,7 +169,7 @@
         counter = lcg@rand
       ]
       { lcg }
-    \rand % This \rand avoids some very odd bug.
+    \rand
   }
 %    \end{macrocode}
 %
@@ -223,22 +224,23 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}[aux]{\l_@@_old_x_fp, \l_@@_old_y_fp}
-% \begin{variable}[aux]{\l_@@_new_x_fp, \l_@@_new_y_fp}
+% \begin{variable}[aux]{\l_@@_old_x_dim, \l_@@_old_y_dim}
+% \begin{variable}[aux]{\l_@@_new_x_dim, \l_@@_new_y_dim}
 %   Coordinates of the two ends of each step: each \cs{draw} statement
 %   goes from the |_old| point to the |_new| point.  See
 %   \cs{@@_step_draw:}.
 %    \begin{macrocode}
-\fp_new:N \l_@@_old_x_fp
-\fp_new:N \l_@@_old_y_fp
-\fp_new:N \l_@@_new_x_fp
-\fp_new:N \l_@@_new_y_fp
+\dim_new:N \l_@@_old_x_dim
+\dim_new:N \l_@@_old_y_dim
+\dim_new:N \l_@@_new_x_dim
+\dim_new:N \l_@@_new_y_dim
 %    \end{macrocode}
 % \end{variable}
 % \end{variable}
 %
 % \begin{variable}[aux]{\l_@@_angles_seq, \l_@@_lengths_seq}
-%   Sequences containing all allowed angles and lengths.
+%   Sequences containing all allowed angles and lengths, as
+%   floating point numbers.
 %    \begin{macrocode}
 \seq_new:N \l_@@_angles_seq
 \seq_new:N \l_@@_lengths_seq
@@ -248,7 +250,7 @@
 % \subsection{How the key-value list is treated}
 %
 % \begin{macro}{\RandomWalk, \randomwalk:n}
-%   The user command \cs{RandomWalk}, based on the code-level
+%   The user command \cs{RandomWalk} is based on the code-level
 %   command \cs{randomwalk:n}, which simply does the setup and calls
 %   the internal macro \cs{@@_walk:}.
 %    \begin{macrocode}
@@ -342,10 +344,10 @@
     \begin{tikzpicture}
       \fp_zero:N \l_@@_angle_fp
       \fp_zero:N \l_@@_length_fp
-      \fp_zero:N \l_@@_old_x_fp
-      \fp_zero:N \l_@@_old_y_fp
-      \fp_zero:N \l_@@_new_x_fp
-      \fp_zero:N \l_@@_new_y_fp
+      \dim_zero:N \l_@@_old_x_dim
+      \dim_zero:N \l_@@_old_y_dim
+      \dim_zero:N \l_@@_new_x_dim
+      \dim_zero:N \l_@@_new_y_dim
       \prg_replicate:nn { \l_@@_step_number_int }
         { \@@_step_draw: }
       \bool_if:NF \l_@@_revert_random_bool
@@ -367,16 +369,22 @@
   {
     \@@_next_length:
     \@@_next_angle:
-    \fp_set_eq:NN \l_@@_old_x_fp \l_@@_new_x_fp
-    \fp_set_eq:NN \l_@@_old_y_fp \l_@@_new_y_fp
-    \fp_add:Nn \l_@@_new_x_fp
-      { \l_@@_length_fp * cosd \l_@@_angle_fp }
-    \fp_add:Nn \l_@@_new_y_fp
-      { \l_@@_length_fp * sind \l_@@_angle_fp }
-    \draw ( \fp_to_dim:N \l_@@_old_x_fp ,
-            \fp_to_dim:N \l_@@_old_y_fp )
-       -- ( \fp_to_dim:N \l_@@_new_x_fp ,
-            \fp_to_dim:N \l_@@_new_y_fp );
+    \dim_set_eq:NN \l_@@_old_x_dim \l_@@_new_x_dim
+    \dim_set_eq:NN \l_@@_old_y_dim \l_@@_new_y_dim
+    \dim_add:Nn \l_@@_new_x_dim
+      {
+        \fp_to_dim:n
+          { \l_@@_length_fp * cosd ( \l_@@_angle_fp ) }
+      }
+    \dim_add:Nn \l_@@_new_y_dim
+      {
+        \fp_to_dim:n
+          { \l_@@_length_fp * sind ( \l_@@_angle_fp ) }
+      }
+    \draw ( \dim_use:N \l_@@_old_x_dim ,
+            \dim_use:N \l_@@_old_y_dim )
+       -- ( \dim_use:N \l_@@_new_x_dim ,
+            \dim_use:N \l_@@_new_y_dim );
   }
 %    \end{macrocode}
 % \end{macro}
