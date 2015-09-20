@@ -295,40 +295,62 @@
     length .value_required:n = true ,
     angles .value_required:n = true ,
     number .int_set:N = \l_@@_step_number_int ,
-    length .code:n =
-      {
-        \seq_set_split:Nnn \l_@@_lengths_seq { , } {#1}
-        \seq_set_map:NNn \l_@@_lengths_seq
-          \l_@@_lengths_seq { \dim_to_fp:n {##1} }
-        \cs_gset_protected_nopar:Npn \@@_next_length:
-          {
-            \@@_get_rand_seq_item:NN
-              \l_@@_lengths_seq \l_@@_internal_tl
-            \fp_set:Nn \l_@@_length_fp { \l_@@_internal_tl }
-          }
-      } ,
-    angles .code:n  =
-      {
-        \seq_set_split:Nnn \l_@@_angles_seq { , } {#1}
-        \seq_set_map:NNn \l_@@_angles_seq
-          \l_@@_angles_seq { \fp_to_tl:n {##1} }
-        \cs_gset_protected_nopar:Npn \@@_next_angle:
-          {
-            \@@_get_rand_seq_item:NN
-              \l_@@_angles_seq \l_@@_internal_tl
-            \bool_if:NF \l_@@_degrees_bool
-              { \tl_put_right:Nn \l_@@_internal_tl { rad } }
-            \bool_if:NTF \l_@@_relative_angles_bool
-              { \fp_add:Nn } { \fp_set:Nn }
-              \l_@@_angle_fp { \l_@@_internal_tl }
-          }
-      } ,
+    length .code:n = { \@@_setup_length:n {#1} } ,
+    angles .code:n = { \@@_setup_angles:n {#1} } ,
     degree .bool_set:N = \l_@@_degrees_bool ,
     degrees .bool_set:N = \l_@@_degrees_bool ,
     angles-relative .bool_set:N = \l_@@_relative_angles_bool ,
     revert-random .bool_set:N = \l_@@_revert_random_bool ,
   }
 %    \end{macrocode}
+%
+% \begin{macro}[aux]{\@@_setup_length:n}
+%   Convert each item in the comma list into a floating point, then
+%   define \cs{@@_next_length:} to set \cs{l_@@_length_fp} to a random
+%   floating point in the list.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_setup_length:n #1
+  {
+    \seq_set_split:Nnn \l_@@_lengths_seq { , } {#1}
+    \seq_set_map:NNn \l_@@_lengths_seq
+      \l_@@_lengths_seq { \dim_to_fp:n {##1} }
+    \cs_gset_protected_nopar:Npn \@@_next_length:
+      {
+        \@@_get_rand_seq_item:NN
+          \l_@@_lengths_seq \l_@@_internal_tl
+        \fp_set:Nn \l_@@_length_fp { \l_@@_internal_tl }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[aux]{\@@_setup_angles:n}
+%   Two complications compared to \cs{@@_setup_length:n}.  First, the
+%   angle can be given in radians rather than degrees: then add |rad|
+%   after the randomly chosen value (in principle it would be better to
+%   convert angles once and for all at the beginning, but that
+%   interacts in a complicated way with the fact that keys can be given
+%   in any order).  Second, angles can be relative, in which case we
+%   use \cs{fp_add:Nn} to take the last angle into account.
+%    \begin{macrocode}
+\cs_new_protected:Npn \@@_setup_angles:n #1
+  {
+    \seq_set_split:Nnn \l_@@_angles_seq { , } {#1}
+    \seq_set_map:NNn \l_@@_angles_seq
+      \l_@@_angles_seq { \fp_to_tl:n {##1} }
+    \cs_gset_protected_nopar:Npn \@@_next_angle:
+      {
+        \@@_get_rand_seq_item:NN
+          \l_@@_angles_seq \l_@@_internal_tl
+        \bool_if:NF \l_@@_degrees_bool
+          { \tl_put_right:Nn \l_@@_internal_tl { rad } }
+        \bool_if:NTF \l_@@_relative_angles_bool
+          { \fp_add:Nn } { \fp_set:Nn }
+          \l_@@_angle_fp { \l_@@_internal_tl }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
 %
 % \subsection{Drawing}
 %
