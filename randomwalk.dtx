@@ -28,7 +28,7 @@
 % \def\filedate{2015/09/20}
 %
 % \title{The \pkg{randomwalk} package: \\
-%   customizable random walks using TikZ\thanks{This file describes version
+%   customizable random walks\thanks{This file describes version
 %     \fileversion, last revised \filedate.}}
 % \author{Bruno Le Floch\thanks{E-mail blflatex@gmail.com}}
 % \date{Released on \filedate}
@@ -40,7 +40,7 @@
 %
 % \begin{abstract}
 %
-% The \pkg{randomwalk} package draws random walks using TikZ. The
+% The \pkg{randomwalk} package draws random walks. The
 % following parameters can be customized:
 % \begin{itemize}
 %   \item The number of steps, of course.
@@ -138,18 +138,18 @@
 %    \begin{macrocode}
 \RequirePackage{expl3}[2015/09/11]
 \ProvidesExplPackage
-  {randomwalk.sty} {2015/09/20} {0.4} {Customizable random walks using TikZ}
+  {randomwalk.sty} {2015/09/20} {0.4} {Customizable random walks}
 \RequirePackage{xparse}[2015/09/11]
 %    \end{macrocode}
 %
-% I use some \LaTeXe{} packages: \pkg{TikZ}, for figures, and \pkg{lcg}
-% for random numbers.
+% Load \pkg{pgfcore} for figures.
 %    \begin{macrocode}
-\RequirePackage{tikz}
+\RequirePackage{pgfcore}
 %    \end{macrocode}
 %
-% \pkg{lcg} needs to know the smallest and biggest random numbers that
-% it should produce, which we take to be $0$ and $\cs{c_@@_lcg_last_int}
+% Load \pkg{lcg} for random numbers.
+% It needs to know the smallest and biggest random numbers that
+% should be produced, which we take to be $0$ and $\cs{c_@@_lcg_last_int}
 % = 2^{31}-2$.  It will then store them in \cs{c@lcg@rand}: the |\c@| is
 % there because of how \LaTeXe{} defines counters. To make it clear that
 % |\c| has a very special meaning here, I do not follow \LaTeX3 naming
@@ -224,18 +224,14 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}[aux]{\l_@@_old_x_dim, \l_@@_old_y_dim}
-% \begin{variable}[aux]{\l_@@_new_x_dim, \l_@@_new_y_dim}
-%   Coordinates of the two ends of each step: each \cs{draw} statement
-%   goes from the |_old| point to the |_new| point.  See
+% \begin{variable}[aux]{\l_@@_x_dim, \l_@@_y_dim}
+%   Current coordinates: each \cs{pgfpathlineto} statement
+%   goes from the previous value of these to the next.  See
 %   \cs{@@_step_draw:}.
 %    \begin{macrocode}
-\dim_new:N \l_@@_old_x_dim
-\dim_new:N \l_@@_old_y_dim
-\dim_new:N \l_@@_new_x_dim
-\dim_new:N \l_@@_new_y_dim
+\dim_new:N \l_@@_x_dim
+\dim_new:N \l_@@_y_dim
 %    \end{macrocode}
-% \end{variable}
 % \end{variable}
 %
 % \begin{variable}[aux]{\l_@@_angles_seq, \l_@@_lengths_seq}
@@ -355,26 +351,27 @@
 % \subsection{Drawing}
 %
 % \begin{macro}[aux]{\@@_walk:}
-%   We are ready to define \cs{@@_walk:}, which draws a \pkg{TikZ}
+%   We are ready to define \cs{@@_walk:}, which draws a \pkg{pgf}
 %   picture of a random walk with the parameters set up by the
-%   \texttt{keys}.  We reset all the coordinates to zero originally.
-%   Then draw the relevant \pkg{TikZ} picture by repeatedly calling
+%   \texttt{keys}.  We reset coordinates to zero originally.
+%   Then draw the relevant \pkg{pgf} picture by repeatedly calling
 %   \cs{@@_step_draw:}.
 %    \begin{macrocode}
 \cs_new:Npn \@@_walk:
   {
-    \begin{tikzpicture}
+    \begin{pgfpicture}
       \fp_zero:N \l_@@_angle_fp
       \fp_zero:N \l_@@_length_fp
-      \dim_zero:N \l_@@_old_x_dim
-      \dim_zero:N \l_@@_old_y_dim
-      \dim_zero:N \l_@@_new_x_dim
-      \dim_zero:N \l_@@_new_y_dim
+      \dim_zero:N \l_@@_x_dim
+      \dim_zero:N \l_@@_y_dim
+      \pgfpathmoveto
+        { \pgfpoint { \l_@@_x_dim } { \l_@@_y_dim } }
       \prg_replicate:nn { \l_@@_step_number_int }
         { \@@_step_draw: }
+      \pgfusepath { stroke }
       \bool_if:NF \l_@@_revert_random_bool
         { \int_gset_eq:NN \cr@nd \cr@nd }
-    \end{tikzpicture}
+    \end{pgfpicture}
   }
 %    \end{macrocode}
 %   \cs{cr@nd} is internal to the lcg package.
@@ -384,29 +381,25 @@
 %   \cs{@@_step_draw:} calls \cs{@@_next_length:} and
 %   \cs{@@_next_angle:} to determine the length and angle of the new
 %   step.  This is then converted to cartesian coordinates and added to
-%   the previous end-point.  Finally, we call \pkg{TikZ}'s \cs{draw} to
-%   produce a line from the |_old| to the |_new| point.
+%   the previous end-point.  Finally, we call \pkg{pgf}'s \cs{pgfpathlineto} to
+%   produce a line to the new point.
 %    \begin{macrocode}
 \cs_new:Npn \@@_step_draw:
   {
     \@@_next_length:
     \@@_next_angle:
-    \dim_set_eq:NN \l_@@_old_x_dim \l_@@_new_x_dim
-    \dim_set_eq:NN \l_@@_old_y_dim \l_@@_new_y_dim
-    \dim_add:Nn \l_@@_new_x_dim
+    \dim_add:Nn \l_@@_x_dim
       {
         \fp_to_dim:n
           { \l_@@_length_fp * cosd ( \l_@@_angle_fp ) }
       }
-    \dim_add:Nn \l_@@_new_y_dim
+    \dim_add:Nn \l_@@_y_dim
       {
         \fp_to_dim:n
           { \l_@@_length_fp * sind ( \l_@@_angle_fp ) }
       }
-    \draw ( \dim_use:N \l_@@_old_x_dim ,
-            \dim_use:N \l_@@_old_y_dim )
-       -- ( \dim_use:N \l_@@_new_x_dim ,
-            \dim_use:N \l_@@_new_y_dim );
+    \pgfpathlineto
+      { \pgfpoint { \l_@@_x_dim } { \l_@@_y_dim } }
   }
 %    \end{macrocode}
 % \end{macro}
