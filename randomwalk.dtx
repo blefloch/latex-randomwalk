@@ -45,9 +45,10 @@
 % \begin{itemize}
 %   \item The number of steps, of course.
 %   \item The length of the steps, either a fixed length, or a length
-%     taken at random from a given set.
-%   \item The angle of each step, either taken at random from a given
-%     set, or uniformly distributed.
+%     taken uniformly at random from a given list.
+%   \item The angle of each step, either taken uniformly at random
+%     from a given list, or uniformly distributed between $0$~and
+%     $360$ degrees.
 % \end{itemize}
 %
 % \end{abstract}
@@ -55,16 +56,21 @@
 %
 % \section{How to use \pkg{randomwalk}}
 %
+% \newcommand{\examplei}
+%   {\RandomWalk {number = 200, length = {4pt, 10pt}}}
+% \newcommand{\exampleii}
+%   {\RandomWalk {number = 100, angles = {0,60,120,180,240,300}, degree}}
+% \newcommand{\exampleiii}
+%   {\RandomWalk {number = 100, length = 1ex, angles = {0,24,48,-24,-48}, degree, angles-relative}}
 % \begin{function}{\RandomWalk}
-% The \pkg{randomwalk} package has exactly one user command:
+% The \pkg{randomwalk} package has a single user command:
 % \cs{RandomWalk}, which takes a list of key-value pairs as its
-% argument. A few examples:
-% \begin{verbatim}
-% \RandomWalk {number = 200, length = {4pt, 10pt}}
-% \RandomWalk {number = 100, angles = {0,60,120,180,240,300}, degree}
-% \RandomWalk {number = 100, length = 1ex,
-%   angles = {0,24,48,-24,-48}, degree, angles-relative}
-% \end{verbatim}
+% argument. A few examples are given in Figures~\ref{examplei}, \ref{exampleii}, and~\ref{exampleiii}:
+% \begin{quote}\ttfamily
+% \detokenize\expandafter{\examplei}\\
+% \detokenize\expandafter{\exampleii}\\
+% \detokenize\expandafter{\exampleiii}
+% \end{quote}
 % Here is a list of all the keys, and their meaning:
 % \begin{itemize}
 %   \item \texttt{number}: the number of steps (default \(10\))
@@ -90,9 +96,9 @@
 % \begin{figure}
 %   \begin{center}
 %     \framebox{\RandomWalk {number = 200, length = {4pt, 10pt}}}
-%     \caption{The result of \texttt{RandomWalk\ \{number = 200,
-%         length = \{4pt, 10pt\}\}}: a \(200\) steps long walk, where
-%       each step has one of two lengths.}
+%     \caption{\label{examplei}A \(200\) steps long
+%       walk, where each step has one of two lengths:
+%       \texttt{\detokenize\expandafter{\examplei}}}
 %   \end{center}
 % \end{figure}
 %
@@ -100,9 +106,8 @@
 %   \begin{center}
 %     \framebox{\RandomWalk{number = 100, angles =
 %         {0, 60, 120, 180, 240, 300}, degrees}}
-%     \caption{The result of \texttt{\string\RandomWalk\ \{number =
-%         100, angles = \{0, 60, 120, 180, 240, 300\}, degrees\}}: angles
-%       are constrained.}
+%     \caption{\label{exampleii}A walk with constrained angles:
+%       \texttt{\detokenize\expandafter{\exampleii}}}
 %   \end{center}
 % \end{figure}
 %
@@ -110,9 +115,8 @@
 %   \begin{center}
 %     \framebox{\RandomWalk {number = 100, length = 1ex, angles =
 %         {0, 24, 48, -24, -48}, degree, angles-relative}}
-%     \caption{A last example: \texttt{\string\RandomWalk\ \{number =
-%         100, length = 1ex, angles = \{0, 24, 48, -24, -48\},
-%         degree, angles-relative\}}}
+%     \caption{\label{exampleiii}A last example, with small relative
+%       angles: \texttt{\detokenize\expandafter{\exampleiii}}}
 %   \end{center}
 % \end{figure}
 %
