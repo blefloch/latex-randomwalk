@@ -96,7 +96,7 @@
 %
 % \begin{figure}
 %   \begin{center}
-%     \framebox{\RandomWalk {number = 200, length = {4pt, 10pt}}}
+%     \framebox{\examplei}
 %     \caption{\label{examplei}A \(200\) steps long
 %       walk, where each step has one of two lengths:
 %       \texttt{\detokenize\expandafter{\examplei}}}
@@ -105,8 +105,7 @@
 %
 % \begin{figure}
 %   \begin{center}
-%     \framebox{\RandomWalk{number = 100, angles =
-%         {0, 60, 120, 180, 240, 300}, degrees}}
+%     \framebox{\exampleii}
 %     \caption{\label{exampleii}A walk with constrained angles:
 %       \texttt{\detokenize\expandafter{\exampleii}}}
 %   \end{center}
@@ -114,8 +113,7 @@
 %
 % \begin{figure}
 %   \begin{center}
-%     \framebox{\RandomWalk {number = 50, length = 1ex, angles =
-%         {0, 24, 48, -24, -48}, degree, angles-relative}}
+%     \framebox{\exampleiii}
 %     \caption{\label{exampleiii}A last example, with small relative
 %       angles: \texttt{\detokenize\expandafter{\exampleiii}}}
 %   \end{center}
@@ -228,7 +226,7 @@
 % \begin{variable}[aux]{\l_@@_x_dim, \l_@@_y_dim}
 %   Current coordinates: each \cs{pgfpathlineto} statement
 %   goes from the previous value of these to the next.  See
-%   \cs{@@_step_draw:}.
+%   \cs{@@_walk_step:}.
 %    \begin{macrocode}
 \dim_new:N \l_@@_x_dim
 \dim_new:N \l_@@_y_dim
@@ -244,7 +242,7 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \subsection{How the key-value list is treated}
+% \subsection{User command and key-value list}
 %
 % \begin{macro}{\RandomWalk, \randomwalk:n}
 %   The user command \cs{RandomWalk} is based on the code-level
@@ -252,34 +250,12 @@
 %   the internal macro \cs{@@_walk:}.
 %    \begin{macrocode}
 \DeclareDocumentCommand \RandomWalk { m }
-  { \randomwalk:n { #1 } }
+  { \randomwalk:n {#1} }
 \cs_new_protected:Npn \randomwalk:n #1
   {
-    \@@_set_defaults:
-    \keys_set:nn { randomwalk } { #1 }
+    \@@_setup_defaults:
+    \keys_set:nn { randomwalk } {#1}
     \@@_walk:
-  }
-%    \end{macrocode}
-% \end{macro}
-%
-% \begin{macro}[aux]{\@@_set_defaults:}
-%   Currently, the package treats the length of steps, and the angle,
-%   completely independently.  The function \cs{@@_next_length:}
-%   contains the action that decides the length of the next step, while
-%   the function \cs{@@_next_angle:} pertains to the angle.
-%
-%   \cs{@@_set_defaults:} sets the default values before processing the
-%   user's key-value input.
-%    \begin{macrocode}
-\cs_new:Npn \@@_set_defaults:
-  {
-    \int_set:Nn \l_@@_step_number_int {10}
-    \cs_gset_protected_nopar:Npn \@@_next_angle:
-      { \@@_fp_set_rand:Nnn \l_@@_angle_fp { 0 } { 360 } }
-    \cs_gset_protected_nopar:Npn \@@_next_length:
-      { \fp_set:Nn \l_@@_length_fp {10} }
-    \bool_set_false:N \l_@@_revert_random_bool
-    \bool_set_false:N \l_@@_relative_angles_bool
   }
 %    \end{macrocode}
 % \end{macro}
@@ -300,6 +276,36 @@
     revert-random .bool_set:N = \l_@@_revert_random_bool ,
   }
 %    \end{macrocode}
+%
+% \subsection{Setup}
+%
+% \begin{macro}[aux]{\@@_setup_defaults:}
+%   The package treats the length of steps, and the angle,
+%   completely independently.  The function \cs{@@_next_length:}
+%   contains the action that decides the length of the next step, while
+%   the function \cs{@@_next_angle:} pertains to the angle.
+%
+%   \cs{@@_setup_defaults:} sets the default values before processing the
+%   user's key-value input.  This also sets initial values of variables
+%   that currently cannot be altered through keys, because it might be
+%   good to provide keys for their initial values too later on.
+%    \begin{macrocode}
+\cs_new:Npn \@@_setup_defaults:
+  {
+    \int_set:Nn \l_@@_step_number_int {10}
+    \cs_gset_protected_nopar:Npn \@@_next_angle:
+      { \@@_fp_set_rand:Nnn \l_@@_angle_fp { 0 } { 360 } }
+    \cs_gset_protected_nopar:Npn \@@_next_length:
+      { \fp_set:Nn \l_@@_length_fp {10} }
+    \bool_set_false:N \l_@@_revert_random_bool
+    \bool_set_false:N \l_@@_relative_angles_bool
+    \fp_zero:N \l_@@_angle_fp
+    \fp_zero:N \l_@@_length_fp
+    \dim_zero:N \l_@@_x_dim
+    \dim_zero:N \l_@@_y_dim
+  }
+%    \end{macrocode}
+% \end{macro}
 %
 % \begin{macro}[aux]{\@@_setup_length:n}
 %   Convert each item in the comma list into a floating point, then
@@ -356,36 +362,56 @@
 %   picture of a random walk with the parameters set up by the
 %   \texttt{keys}.  We reset coordinates to zero originally.
 %   Then draw the relevant \pkg{pgf} picture by repeatedly calling
-%   \cs{@@_step_draw:}.
+%   \cs{@@_walk_step:}.
 %    \begin{macrocode}
 \cs_new:Npn \@@_walk:
   {
-    \begin{pgfpicture}
-      \fp_zero:N \l_@@_angle_fp
-      \fp_zero:N \l_@@_length_fp
-      \dim_zero:N \l_@@_x_dim
-      \dim_zero:N \l_@@_y_dim
-      \pgfpathmoveto
-        { \pgfpoint { \l_@@_x_dim } { \l_@@_y_dim } }
-      \prg_replicate:nn { \l_@@_step_number_int }
-        { \@@_step_draw: }
-      \pgfusepath { stroke }
-      \bool_if:NF \l_@@_revert_random_bool
-        { \int_gset_eq:NN \cr@nd \cr@nd }
-    \end{pgfpicture}
+    \@@_walk_start:
+    \prg_replicate:nn { \l_@@_step_number_int }
+      { \@@_walk_step: }
+    \bool_if:NF \l_@@_revert_random_bool
+      { \int_gset_eq:NN \cr@nd \cr@nd }
+    \@@_walk_stop:
   }
 %    \end{macrocode}
 %   \cs{cr@nd} is internal to the lcg package.
 % \end{macro}
 %
-% \begin{macro}[aux]{\@@_step_draw:}
-%   \cs{@@_step_draw:} calls \cs{@@_next_length:} and
+% \begin{macro}[aux]{\@@_walk_start:, \@@_walk_line:, \@@_walk_stop:}
+%   These functions encapsulate all of the \pkg{pgf}-related code.  The
+%   \texttt{start} function begins the pgfpicture environment and
+%   starts a path at position (x,y).  The \texttt{line} function adds
+%   to the path a line from the previous position to the new (x,y).
+%   The \texttt{stop} function draws the path constructed by
+%   \cs{@@_walk_step:} and ends the pgfpicture environment.
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \@@_walk_start:
+  {
+    \begin{pgfpicture}
+      \pgfpathmoveto
+        { \pgfpoint { \l_@@_x_dim } { \l_@@_y_dim } }
+  }
+\cs_new_protected_nopar:Npn \@@_walk_line:
+  {
+    \pgfpathlineto
+      { \pgfpoint { \l_@@_x_dim } { \l_@@_y_dim } }
+  }
+\cs_new_protected_nopar:Npn \@@_walk_stop:
+  {
+      \pgfusepath { stroke }
+    \end{pgfpicture}
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[aux]{\@@_walk_step:}
+%   \cs{@@_walk_step:} calls \cs{@@_next_length:} and
 %   \cs{@@_next_angle:} to determine the length and angle of the new
 %   step.  This is then converted to cartesian coordinates and added to
 %   the previous end-point.  Finally, we call \pkg{pgf}'s \cs{pgfpathlineto} to
 %   produce a line to the new point.
 %    \begin{macrocode}
-\cs_new:Npn \@@_step_draw:
+\cs_new:Npn \@@_walk_step:
   {
     \@@_next_length:
     \@@_next_angle:
@@ -399,8 +425,7 @@
         \fp_to_dim:n
           { \l_@@_length_fp * sind ( \l_@@_angle_fp ) }
       }
-    \pgfpathlineto
-      { \pgfpoint { \l_@@_x_dim } { \l_@@_y_dim } }
+    \@@_walk_line:
   }
 %    \end{macrocode}
 % \end{macro}
