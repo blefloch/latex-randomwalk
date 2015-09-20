@@ -290,7 +290,7 @@
 %   that currently cannot be altered through keys, because it might be
 %   good to provide keys for their initial values too later on.
 %    \begin{macrocode}
-\cs_new:Npn \@@_setup_defaults:
+\cs_new_protected_nopar:Npn \@@_setup_defaults:
   {
     \int_set:Nn \l_@@_step_number_int {10}
     \cs_gset_protected_nopar:Npn \@@_next_angle:
@@ -364,7 +364,7 @@
 %   Then draw the relevant \pkg{pgf} picture by repeatedly calling
 %   \cs{@@_walk_step:}.
 %    \begin{macrocode}
-\cs_new:Npn \@@_walk:
+\cs_new_protected_nopar:Npn \@@_walk:
   {
     \@@_walk_start:
     \prg_replicate:nn { \l_@@_step_number_int }
@@ -411,7 +411,7 @@
 %   the previous end-point.  Finally, we call \pkg{pgf}'s \cs{pgfpathlineto} to
 %   produce a line to the new point.
 %    \begin{macrocode}
-\cs_new:Npn \@@_walk_step:
+\cs_new_protected_nopar:Npn \@@_walk_step:
   {
     \@@_next_length:
     \@@_next_angle:
