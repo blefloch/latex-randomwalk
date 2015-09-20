@@ -16,6 +16,7 @@
 \RequirePackage{expl3}
 \documentclass[full]{l3doc}
 \usepackage{randomwalk}
+\AtBeginDocument{\chgrand[seed = 411500]\rand}
 \usepackage{amsmath}
 \begin{document}
   \DocInput{randomwalk.dtx}
@@ -61,7 +62,7 @@
 % \newcommand{\exampleii}
 %   {\RandomWalk {number = 100, angles = {0,60,120,180,240,300}, degree}}
 % \newcommand{\exampleiii}
-%   {\RandomWalk {number = 100, length = 1ex, angles = {0,24,48,-24,-48}, degree, angles-relative}}
+%   {\RandomWalk {number = 50, length = 1ex, angles = {0,24,48,-24,-48}, degree, angles-relative}}
 % \begin{function}{\RandomWalk}
 % The \pkg{randomwalk} package has a single user command:
 % \cs{RandomWalk}, which takes a list of key-value pairs as its
@@ -113,7 +114,7 @@
 %
 % \begin{figure}
 %   \begin{center}
-%     \framebox{\RandomWalk {number = 100, length = 1ex, angles =
+%     \framebox{\RandomWalk {number = 50, length = 1ex, angles =
 %         {0, 24, 48, -24, -48}, degree, angles-relative}}
 %     \caption{\label{exampleiii}A last example, with small relative
 %       angles: \texttt{\detokenize\expandafter{\exampleiii}}}
