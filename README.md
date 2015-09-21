@@ -13,6 +13,7 @@ bundles.
 
 
 All suggestions/comments/bug reports are welcome!
+See https://github.com/blefloch/latex-randomwalk
 
 
 The package is extracted by running
