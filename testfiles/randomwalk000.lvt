@@ -1,9 +1,9 @@
 %
 % Copyright (C) 2017 Bruno Le Floch
 %
-\documentclass{minimal}
+\documentclass{article}
 \input{regression-test}
-\RequirePackage[log-functions,check-declarations]{expl3}
+\RequirePackage[enable-debug]{expl3}
 \RequirePackage{xparse}
 \RequirePackage{pgfcore}
 \ExplSyntaxOn
@@ -31,6 +31,14 @@
   }
 \ExplSyntaxOff
 
+\ExplSyntaxOn
+\debug_on:n { check-declarations , check-expressions , deprecation , log-functions }
+\ExplSyntaxOff
 \START
 \RequirePackage{randomwalk}
+\OMIT
+\begin{document}
+\setbox0\hbox{a}
+\TIMO
+\setbox0\hbox{\RandomWalk {number = 50, length = 1ex, angles = {0,24,48,-24,-48}, degree, angles-relative}}
 \END
