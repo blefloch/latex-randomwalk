@@ -1,5 +1,5 @@
 % \iffalse
-%% File: randomwalk.dtx Copyright (C) 2011-2017 Bruno Le Floch
+%% File: randomwalk.dtx Copyright (C) 2011-2018 Bruno Le Floch
 %%
 %% This work may be distributed and/or modified under the
 %% conditions of the LaTeX Project Public License, either version 1.3
@@ -178,7 +178,7 @@
 %
 % \subsection{Variables}
 %
-% \begin{variable}[aux]{\l_@@_internal_tl, \l_@@_internal_int}
+% \begin{variable}{\l_@@_internal_tl, \l_@@_internal_int}
 %   Used for scratch assignments.
 %    \begin{macrocode}
 \tl_new:N \l_@@_internal_tl
@@ -186,14 +186,14 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}[aux]{\l_@@_step_number_int}
+% \begin{variable}{\l_@@_step_number_int}
 %   The number of steps requested by the caller.
 %    \begin{macrocode}
 \int_new:N \l_@@_step_number_int
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}[aux]{\l_@@_relative_angles_bool, \l_@@_degrees_bool}
+% \begin{variable}{\l_@@_relative_angles_bool, \l_@@_degrees_bool}
 %   Booleans for whether angles are relative (keyval option),
 %   and whether they are in degrees.
 %    \begin{macrocode}
@@ -202,7 +202,7 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}[aux]{\l_@@_revert_random_bool}
+% \begin{variable}{\l_@@_revert_random_bool}
 %   Booleans for whether to revert the random seed to its original value
 %   or keep the last value reached at the end of a random path.
 %    \begin{macrocode}
@@ -210,7 +210,7 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{macro}[aux]{\@@_next_angle:, \@@_next_length:}
+% \begin{macro}{\@@_next_angle:, \@@_next_length:}
 %   Set the \cs{l_@@_angle_fp} and \cs{l_@@_length_fp} of the next step,
 %   most often randomly.
 %    \begin{macrocode}
@@ -219,7 +219,7 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{variable}[aux]{\l_@@_angle_fp, \l_@@_length_fp}
+% \begin{variable}{\l_@@_angle_fp, \l_@@_length_fp}
 %   Angle and length of the next step.
 %    \begin{macrocode}
 \fp_new:N \l_@@_angle_fp
@@ -227,7 +227,7 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}[aux]{\l_@@_x_dim, \l_@@_y_dim}
+% \begin{variable}{\l_@@_x_dim, \l_@@_y_dim}
 %   Current coordinates: each \cs{pgfpathlineto} statement
 %   goes from the previous value of these to the next.  See
 %   \cs{@@_walk_step:}.
@@ -237,7 +237,7 @@
 %    \end{macrocode}
 % \end{variable}
 %
-% \begin{variable}[aux]{\l_@@_angles_seq, \l_@@_lengths_seq}
+% \begin{variable}{\l_@@_angles_seq, \l_@@_lengths_seq}
 %   Sequences containing all allowed angles and lengths, as
 %   floating point numbers.
 %    \begin{macrocode}
@@ -283,7 +283,7 @@
 %
 % \subsection{Setup}
 %
-% \begin{macro}[aux]{\@@_setup_defaults:}
+% \begin{macro}{\@@_setup_defaults:}
 %   The package treats the length of steps, and the angle,
 %   completely independently.  The function \cs{@@_next_length:}
 %   contains the action that decides the length of the next step, while
@@ -311,7 +311,7 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[aux]{\@@_setup_length:n}
+% \begin{macro}{\@@_setup_length:n}
 %   Convert each item in the comma list into a floating point, then
 %   define \cs{@@_next_length:} to set \cs{l_@@_length_fp} to a random
 %   floating point in the list.
@@ -331,7 +331,7 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[aux]{\@@_setup_angles:n}
+% \begin{macro}{\@@_setup_angles:n}
 %   Two complications compared to \cs{@@_setup_length:n}.  First, the
 %   angle can be given in radians rather than degrees: then add |rad|
 %   after the randomly chosen value (in principle it would be better to
@@ -361,7 +361,7 @@
 %
 % \subsection{Drawing}
 %
-% \begin{macro}[aux]{\@@_walk:}
+% \begin{macro}{\@@_walk:}
 %   We are ready to define \cs{@@_walk:}, which draws a \pkg{pgf}
 %   picture of a random walk with the parameters set up by the
 %   \texttt{keys}.  We reset coordinates to zero originally.
@@ -381,7 +381,7 @@
 %   \cs{cr@nd} is internal to the lcg package.
 % \end{macro}
 %
-% \begin{macro}[aux]{\@@_walk_start:, \@@_walk_line:, \@@_walk_stop:}
+% \begin{macro}{\@@_walk_start:, \@@_walk_line:, \@@_walk_stop:}
 %   These functions encapsulate all of the \pkg{pgf}-related code.  The
 %   \texttt{start} function begins the pgfpicture environment and
 %   starts a path at position (x,y).  The \texttt{line} function adds
@@ -408,7 +408,7 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[aux]{\@@_walk_step:}
+% \begin{macro}{\@@_walk_step:}
 %   \cs{@@_walk_step:} calls \cs{@@_next_length:} and
 %   \cs{@@_next_angle:} to determine the length and angle of the new
 %   step.  This is then converted to cartesian coordinates and added to
@@ -440,7 +440,7 @@
 % we provide our own \LaTeX3-y functions.  Also, this will allow us to
 % change quite easily our source of random numbers.
 %
-% \begin{macro}[aux]{\@@_fp_set_rand:Nnn}
+% \begin{macro}{\@@_fp_set_rand:Nnn}
 %   We also need floating point random numbers, assigned
 %   to the variable |#1|.
 %    \begin{macrocode}
@@ -453,7 +453,7 @@
 %    \end{macrocode}
 % \end{macro}
 %
-% \begin{macro}[aux]{\@@_get_rand_seq_item:NN}
+% \begin{macro}{\@@_get_rand_seq_item:NN}
 %   We can now pick an element at random from a sequence.  If the
 %   sequence has a single element, no need for randomness.
 %    \begin{macrocode}
