@@ -2,7 +2,7 @@
 %% File: randomwalk.dtx Copyright (C) 2011-2018 Bruno Le Floch
 %%
 %% This work may be distributed and/or modified under the
-%% conditions of the LaTeX Project Public License, either version 1.3
+%% conditions of the LaTeX Project Public License, either version 1.3c
 %% of this license or (at your option) any later version.
 %% The latest version of this license is in
 %%   http://www.latex-project.org/lppl.txt
@@ -29,13 +29,13 @@
 % \fi
 %
 %^^A The date here also is in \ProvidesExplPackage, and in the copyright.
-% \def\fileversion{v0.5}
-% \def\filedate{2017/11/29}
+% \def\fileversion{v0.6}
+% \def\filedate{2018/12/28}
 %
 % \title{The \pkg{randomwalk} package: \\
 %   customizable random walks\thanks{This file describes version
 %     \fileversion, last revised \filedate.}}
-% \author{Bruno Le Floch\thanks{E-mail blflatex@gmail.com}}
+% \author{Bruno Le Floch\thanks{E-mail blflatex+randomwalk@gmail.com}}
 % \date{Released on \filedate}
 %
 % \maketitle
@@ -141,7 +141,7 @@
 %    \begin{macrocode}
 \RequirePackage{expl3}[2017/11/14]
 \ProvidesExplPackage
-  {randomwalk} {2017/11/29} {0.5} {Customizable random walks}
+  {randomwalk} {2018/12/28} {0.6} {Customizable random walks}
 \RequirePackage{xparse}[2017/11/14]
 %    \end{macrocode}
 %
@@ -162,12 +162,12 @@
 % document class, hence we do it \cs{AtBeginDocument}.  Also worth noting
 % is the call to \cs{rand}, which avoids some very odd bug.
 %    \begin{macrocode}
-\int_const:Nn \c_@@_lcg_last_int { \c_max_int - \c_one }
+\int_const:Nn \c_@@_lcg_last_int { \c_max_int - 1 }
 \AtBeginDocument
   {
     \RequirePackage
       [
-        first= \c_zero ,
+        first= 0 ,
         last = \c_@@_lcg_last_int ,
         counter = lcg@rand
       ]

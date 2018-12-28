@@ -1,6 +1,6 @@
 Random Walks for LaTeX
 =================================
-* E-mail: blflatex@gmail.com
+* E-mail: blflatex+randomwalk@gmail.com
 * Released under the LaTeX Project Public License v1.3c or later
   See http://www.latex-project.org/lppl.txt
 
